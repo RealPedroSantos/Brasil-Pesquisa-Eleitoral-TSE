@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#07111f">
+  <title>Brasil — Pesquisa Eleitoral TSE 2026</title>
+  <meta name="description" content="Painel interativo com a trajetória das pesquisas eleitorais nacionais para presidente do Brasil em 2026.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="container">
+    <header class="hero">
+      <div>
+        <span class="eyebrow">ELEIÇÃO PRESIDENCIAL 2026</span>
+        <h1>Trajetória das pesquisas nacionais</h1>
+        <p>Linhas mensais e por levantamento, com fotos dos candidatos e detalhes de cada pesquisa publicada.</p>
+      </div>
+      <a class="tse-link" href="https://pesqele-divulgacao.tse.jus.br/app/pesquisa/listar.xhtml" target="_blank" rel="noopener">Consultar PesqEle/TSE</a>
+    </header>
+
+    <section class="summary" id="summary"></section>
+
+    <section class="panel controls">
+      <div class="control-group">
+        <label for="viewMode">Visualização</label>
+        <select id="viewMode">
+          <option value="polls">Cada pesquisa</option>
+          <option value="monthly">Média mensal</option>
+        </select>
+      </div>
+      <div class="control-group grow">
+        <span class="label">Candidatos exibidos</span>
+        <div id="candidateFilters" class="filters"></div>
+      </div>
+    </section>
+
+    <section class="panel chart-panel">
+      <div class="chart-heading">
+        <div>
+          <h2>Evolução da intenção de voto</h2>
+          <p>Clique em qualquer ponto para abrir os dados do levantamento.</p>
+        </div>
+        <div class="scale-note">Escala: 0% a 50%</div>
+      </div>
+      <div class="chart-scroll">
+        <svg id="timelineChart" viewBox="0 0 1100 620" role="img" aria-label="Gráfico de linhas das pesquisas presidenciais de 2026"></svg>
+      </div>
+      <p class="chart-footnote">A ausência de um candidato em determinada pesquisa não foi transformada em 0%. As linhas ligam apenas os levantamentos em que o nome aparece.</p>
+    </section>
+
+    <section id="detailPanel" class="panel detail-panel hidden" aria-live="polite">
+      <div class="detail-top">
+        <div class="candidate-identification">
+          <div id="detailPhoto"></div>
+          <div>
+            <h2 id="detailName"></h2>
+            <p id="detailParty"></p>
+          </div>
+        </div>
+        <button id="closeDetail" type="button">Fechar</button>
+      </div>
+      <div id="detailStats" class="detail-stats"></div>
+      <div id="detailMeta" class="detail-meta"></div>
+    </section>
+
+    <section class="panel">
+      <div class="section-heading">
+        <h2>Últimos resultados por candidato</h2>
+        <p>Ordenação baseada no levantamento mais recente disponível para cada nome.</p>
+      </div>
+      <div id="ranking" class="ranking"></div>
+    </section>
+
+    <section class="panel methodology">
+      <h2>Metodologia e cobertura</h2>
+      <p>O painel reúne pesquisas nacionais estimuladas de primeiro turno cujos percentuais puderam ser conferidos em publicações públicas. O PesqEle/TSE registra os levantamentos e seus documentos, mas não fornece uma tabela única e padronizada com todos os percentuais por candidato. Por isso, cada resultado precisa ser conferido individualmente.</p>
+      <p>A visualização mensal calcula uma média simples das pesquisas disponíveis no mês, somente entre os levantamentos nos quais cada candidato foi testado. Ela não é projeção eleitoral nem substitui um agregador estatístico ponderado.</p>
+      <p class="updated">Dados estruturados no projeto em 27 de julho de 2026.</p>
+    </section>
+  </main>
+
+  <div id="tooltip" class="tooltip hidden"></div>
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
