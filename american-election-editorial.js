@@ -224,3 +224,115 @@
     init();
   }
 })();
+
+(() => {
+  'use strict';
+
+  const ALL_VALUES = new Set(['', 'todas', 'todos', 'all']);
+
+  function normalizedValue(value) {
+    return String(value || '').trim();
+  }
+
+  function isAllStates(value) {
+    return ALL_VALUES.has(normalizedValue(value).toLowerCase());
+  }
+
+  function stateName(uf, select) {
+    const names = window.ELECTION_DATA?.stateNames || {};
+    const option = Array.from(select?.options || []).find((item) => item.value === uf);
+    return names[uf] || option?.textContent?.trim() || uf;
+  }
+
+  function ensureSelectionStatus(map) {
+    const card = map.closest('.map-card');
+    if (!card) return null;
+
+    let status = card.querySelector('.map-selection-status');
+    if (status) return status;
+
+    status = document.createElement('div');
+    status.className = 'map-selection-status';
+    status.setAttribute('role', 'status');
+    status.setAttribute('aria-live', 'polite');
+
+    const legend = card.querySelector('.map-legend');
+    if (legend) card.insertBefore(status, legend);
+    else card.appendChild(status);
+
+    return status;
+  }
+
+  function prepareStatePaths(map) {
+    map.querySelectorAll('.official-state').forEach((path) => {
+      const uf = normalizedValue(path.dataset.uf).toUpperCase();
+      if (!uf) return;
+
+      path.setAttribute('aria-pressed', path.classList.contains('is-selected') ? 'true' : 'false');
+      path.setAttribute('data-touch-target', 'state');
+      path.setAttribute('vector-effect', 'non-scaling-stroke');
+    });
+  }
+
+  function applySelectedState(map, select) {
+    const selectedUf = normalizedValue(select.value).toUpperCase();
+    const hasSelection = !isAllStates(selectedUf);
+
+    map.querySelectorAll('.official-state').forEach((path) => {
+      const selected = hasSelection && normalizedValue(path.dataset.uf).toUpperCase() === selectedUf;
+      path.classList.toggle('is-selected', selected);
+      path.setAttribute('aria-pressed', selected ? 'true' : 'false');
+      if (selected) path.setAttribute('aria-current', 'true');
+      else path.removeAttribute('aria-current');
+    });
+
+    const status = ensureSelectionStatus(map);
+    if (!status) return;
+
+    status.classList.toggle('has-selection', hasSelection);
+    status.innerHTML = hasSelection
+      ? `<span>Estado selecionado</span><strong>${selectedUf} · ${stateName(selectedUf, select)}</strong>`
+      : '<span>Selecione uma unidade da Federação no mapa</span><strong>Brasil</strong>';
+  }
+
+  function bindStateMap() {
+    const map = document.getElementById('brazilMap');
+    const select = document.getElementById('localUf');
+    if (!map || !select || map.dataset.selectionUxBound === 'true') return;
+
+    map.dataset.selectionUxBound = 'true';
+    map.setAttribute('role', 'group');
+    map.setAttribute('aria-label', 'Mapa do Brasil. Selecione um estado para filtrar as pesquisas.');
+
+    const refresh = () => {
+      prepareStatePaths(map);
+      applySelectedState(map, select);
+    };
+
+    select.addEventListener('change', refresh);
+
+    map.addEventListener('pointerover', (event) => {
+      const path = event.target.closest?.('.official-state');
+      if (path && map.contains(path)) path.classList.add('is-hovered');
+    });
+
+    map.addEventListener('pointerout', (event) => {
+      const path = event.target.closest?.('.official-state');
+      if (path && map.contains(path)) path.classList.remove('is-hovered');
+    });
+
+    const mapObserver = new MutationObserver(() => requestAnimationFrame(refresh));
+    mapObserver.observe(map, { childList: true, subtree: true });
+
+    const selectObserver = new MutationObserver(() => requestAnimationFrame(refresh));
+    selectObserver.observe(select, { childList: true, subtree: true });
+
+    refresh();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bindStateMap, { once: true });
+  } else {
+    bindStateMap();
+  }
+})();
