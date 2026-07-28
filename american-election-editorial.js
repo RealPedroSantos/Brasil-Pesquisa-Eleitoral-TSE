@@ -86,3 +86,42 @@
     init();
   }
 })();
+
+(() => {
+  'use strict';
+
+  function loadAuditApp() {
+    if (document.querySelector('script[src="audit-system.js"]')) return;
+    const script = document.createElement('script');
+    script.src = 'audit-system.js';
+    script.defer = true;
+    document.body.appendChild(script);
+  }
+
+  function loadAuditSystem() {
+    if (!document.querySelector('link[href="audit-system.css"]')) {
+      const stylesheet = document.createElement('link');
+      stylesheet.rel = 'stylesheet';
+      stylesheet.href = 'audit-system.css';
+      document.head.appendChild(stylesheet);
+    }
+
+    if (window.ELECTION_AUDIT_DATA) {
+      loadAuditApp();
+      return;
+    }
+
+    if (!document.querySelector('script[src="audit-data.js"]')) {
+      const dataScript = document.createElement('script');
+      dataScript.src = 'audit-data.js';
+      dataScript.onload = loadAuditApp;
+      document.body.appendChild(dataScript);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadAuditSystem, { once: true });
+  } else {
+    loadAuditSystem();
+  }
+})();
