@@ -308,3 +308,29 @@
     loadElectionCountdown();
   }
 })();
+
+(() => {
+  'use strict';
+
+  function loadAmericanElectionEditorial() {
+    if (!document.querySelector('link[href="american-election-editorial.css"]')) {
+      const stylesheet = document.createElement('link');
+      stylesheet.rel = 'stylesheet';
+      stylesheet.href = 'american-election-editorial.css';
+      document.head.appendChild(stylesheet);
+    }
+
+    if (!document.querySelector('script[src="american-election-editorial.js"]')) {
+      const script = document.createElement('script');
+      script.src = 'american-election-editorial.js';
+      script.defer = true;
+      document.body.appendChild(script);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadAmericanElectionEditorial, { once: true });
+  } else {
+    loadAmericanElectionEditorial();
+  }
+})();
