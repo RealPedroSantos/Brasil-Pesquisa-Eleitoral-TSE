@@ -137,3 +137,92 @@
     loadAuditSystem();
   }
 })();
+
+(() => {
+  'use strict';
+
+  const VIEWPORT_MARGIN = 12;
+  const CURSOR_OFFSET = 14;
+
+  function getTooltip() {
+    return document.getElementById('chartTooltip');
+  }
+
+  function mountTooltipInViewport() {
+    const tooltip = getTooltip();
+    if (!tooltip) return null;
+
+    if (tooltip.parentElement !== document.body) {
+      document.body.appendChild(tooltip);
+    }
+
+    tooltip.style.position = 'fixed';
+    tooltip.style.transform = 'none';
+    tooltip.style.margin = '0';
+    tooltip.style.pointerEvents = 'none';
+    tooltip.style.zIndex = '1000';
+    tooltip.style.maxWidth = 'min(320px, calc(100vw - 24px))';
+
+    return tooltip;
+  }
+
+  function positionTooltip(event) {
+    const point = event.target?.closest?.('.point');
+    if (!point) return;
+
+    const tooltip = mountTooltipInViewport();
+    if (!tooltip || tooltip.classList.contains('hidden')) return;
+
+    const rect = tooltip.getBoundingClientRect();
+    const viewportWidth = document.documentElement.clientWidth;
+    const viewportHeight = document.documentElement.clientHeight;
+
+    let left = event.clientX + CURSOR_OFFSET;
+    let top = event.clientY + CURSOR_OFFSET;
+
+    if (left + rect.width > viewportWidth - VIEWPORT_MARGIN) {
+      left = event.clientX - rect.width - CURSOR_OFFSET;
+    }
+
+    if (top + rect.height > viewportHeight - VIEWPORT_MARGIN) {
+      top = event.clientY - rect.height - CURSOR_OFFSET;
+    }
+
+    left = Math.min(
+      Math.max(VIEWPORT_MARGIN, left),
+      Math.max(VIEWPORT_MARGIN, viewportWidth - rect.width - VIEWPORT_MARGIN)
+    );
+
+    top = Math.min(
+      Math.max(VIEWPORT_MARGIN, top),
+      Math.max(VIEWPORT_MARGIN, viewportHeight - rect.height - VIEWPORT_MARGIN)
+    );
+
+    tooltip.style.left = `${Math.round(left)}px`;
+    tooltip.style.top = `${Math.round(top)}px`;
+  }
+
+  function hideTooltip() {
+    getTooltip()?.classList.add('hidden');
+  }
+
+  function initTooltipPositioning() {
+    if (!mountTooltipInViewport()) return;
+
+    document.addEventListener('mousemove', positionTooltip, { passive: true });
+    document.addEventListener('mouseover', (event) => {
+      if (!event.target?.closest?.('.point')) return;
+      requestAnimationFrame(() => positionTooltip(event));
+    }, { passive: true });
+
+    window.addEventListener('scroll', hideTooltip, { passive: true, capture: true });
+    window.addEventListener('resize', hideTooltip, { passive: true });
+    window.addEventListener('blur', hideTooltip);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initTooltipPositioning, { once: true });
+  } else {
+    initTooltipPositioning();
+  }
+})();
