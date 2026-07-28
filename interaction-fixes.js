@@ -12,6 +12,23 @@
   let syntheticClick = false;
 
   const getPanel = () => document.querySelector('.presidential-panel');
+  const getDetailPanel = () => document.querySelector('.candidate-detail-panel');
+  const getDashboard = () => document.querySelector('.dashboard-grid');
+
+  function setCandidateDetailsVisible(visible, options = {}) {
+    const detailPanel = getDetailPanel();
+    const dashboard = getDashboard();
+    if (!detailPanel) return;
+
+    detailPanel.hidden = !visible;
+    detailPanel.classList.toggle('is-point-open', visible);
+    detailPanel.setAttribute('aria-hidden', visible ? 'false' : 'true');
+    dashboard?.classList.toggle('candidate-details-visible', visible);
+
+    if (visible && options.scroll && window.matchMedia('(max-width: 980px)').matches) {
+      requestAnimationFrame(() => detailPanel.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    }
+  }
 
   function candidateFromElement(element) {
     if (!element) return null;
@@ -75,6 +92,7 @@
     pinnedId = null;
     hoverId = null;
     panel?.classList.remove('interaction-hovering');
+    setCandidateDetailsVisible(false);
 
     if (!invokeBuiltInReset()) {
       document.querySelector('.chart-focus-hud')?.remove();
@@ -100,11 +118,15 @@
     applyVisualFocus(pinnedId);
   }
 
-  function selectFromChart(candidate) {
+  function selectFromChart(candidate, revealDetails = false) {
     const panel = getPanel();
     if (!panel || !candidate) return;
 
     if (pinnedId === candidate.id) {
+      if (revealDetails) {
+        setCandidateDetailsVisible(true, { scroll: true });
+        return;
+      }
       clearSelection();
       return;
     }
@@ -122,7 +144,10 @@
       syntheticClick = false;
     }
 
-    requestAnimationFrame(() => applyVisualFocus(candidate.id));
+    requestAnimationFrame(() => {
+      applyVisualFocus(candidate.id);
+      setCandidateDetailsVisible(revealDetails, { scroll: revealDetails });
+    });
   }
 
   function bindInteractions() {
@@ -130,6 +155,8 @@
     const chart = document.getElementById('mainChart');
     if (!panel || !chart || panel.dataset.interactionFixBound === 'true') return;
     panel.dataset.interactionFixBound = 'true';
+
+    setCandidateDetailsVisible(false);
 
     panel.addEventListener('pointerover', (event) => {
       const trigger = event.target.closest(interactiveSelector);
@@ -166,6 +193,7 @@
         pinnedId = null;
         hoverId = null;
         panel.classList.remove('interaction-hovering');
+        setCandidateDetailsVisible(false);
         return;
       }
 
@@ -174,14 +202,24 @@
         const candidate = candidateFromElement(trigger);
         if (!candidate) return;
 
-        if (trigger.matches('.series-line, .series-area, .point')) {
+        if (trigger.matches('.point')) {
           event.preventDefault();
           event.stopImmediatePropagation();
-          selectFromChart(candidate);
+          selectFromChart(candidate, true);
+          return;
+        }
+
+        if (trigger.matches('.series-line, .series-area')) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          setCandidateDetailsVisible(false);
+          selectFromChart(candidate, false);
           return;
         }
 
         if (syntheticClick) return;
+
+        setCandidateDetailsVisible(false);
 
         if (pinnedId === candidate.id) {
           event.preventDefault();
@@ -197,7 +235,7 @@
         return;
       }
 
-      if (!event.target.closest('.chart-focus-hud')) clearSelection();
+      if (!event.target.closest('.chart-focus-hud, .candidate-detail-panel')) clearSelection();
     }, true);
 
     document.addEventListener('keydown', (event) => {
