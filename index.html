@@ -1,32 +1,150 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#04111f">
-<title>Brasil 2026 — Painel de Pesquisas</title>
-<meta name="description" content="Painel informativo de pesquisas eleitorais com fontes oficiais e institutos verificados.">
-<link rel="stylesheet" href="styles.css">
-<link rel="stylesheet" href="tse-live.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#020c19">
+  <title>Pesquisas Eleitorais 2026 — Central de Dados</title>
+  <meta name="description" content="Central interativa de pesquisas eleitorais registradas para as Eleições Gerais de 2026.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<div class="broadcast-strip"><div class="broadcast-strip-inner"><span class="broadcast-label">CENTRAL DE DADOS</span><span class="broadcast-status"><i></i>FONTES EM MONITORAMENTO</span><span class="broadcast-year">BRASIL 2026</span></div></div>
-<main class="container">
-<header class="hero">
-<div class="hero-copy"><span class="eyebrow">PESQUISAS · TENDÊNCIAS · COBERTURA LOCAL</span><h1>Brasil <em>2026</em></h1><p>Painel visual para acompanhar pesquisas nacionais e localizar levantamentos estaduais, municipais e por bairro em fontes verificáveis.</p></div>
-<div class="hero-actions"><a class="primary-link" href="#radar-local">Pesquisar cidade ou bairro</a><a class="secondary-link" href="https://pesqele-divulgacao.tse.jus.br/app/pesquisa/listar.xhtml" target="_blank" rel="noopener">Abrir PesqEle/TSE</a></div>
-</header>
-<section class="summary" id="summary" aria-label="Resumo dos dados"></section>
-<section id="tseLiveCard" class="tse-live checking" aria-live="polite"><span id="tseLiveDot" class="live-dot"></span><div class="tse-live-copy"><strong id="tseLiveTitle">Verificando a base oficial do TSE</strong><span id="tseLiveDetails">Consultando o arquivo atualizado de pesquisas eleitorais.</span></div><div class="tse-live-meta"><small id="tseLiveChecked">Conectando…</small><a id="tseLiveLink" href="https://dadosabertos.tse.jus.br/dataset/pesquisas-eleitorais-2026" target="_blank" rel="noopener">Dados oficiais</a></div></section>
-<section class="panel controls" aria-label="Controles do gráfico"><label class="control-group" for="viewMode"><span>Leitura do gráfico</span><select id="viewMode"><option value="polls">Cada pesquisa</option><option value="monthly">Média mensal</option></select></label><div class="control-group grow"><span class="label">Candidatos exibidos</span><div id="candidateFilters" class="filters"></div></div></section>
-<section class="panel chart-panel"><div class="panel-kicker">SÉRIE PRESIDENCIAL</div><div class="chart-heading"><div><h2>Trajetória da intenção de voto</h2><p>Toque em um ponto ou retrato para consultar os dados do levantamento.</p></div><div class="scale-note">ESCALA 0–50%</div></div><div class="chart-wrap" id="chartWrap"><svg id="timelineChart" role="img" aria-label="Gráfico de linhas das pesquisas presidenciais de 2026"></svg></div><div class="chart-legend" id="chartLegend"></div><p class="chart-footnote">A ausência de um nome em uma pesquisa não foi convertida em 0%.</p></section>
-<section class="panel latest-panel"><div class="panel-kicker">RESULTADOS MAIS RECENTES</div><div class="section-heading"><div><h2>Último levantamento disponível</h2><p>Abra cada linha para conferir instituto, data e metodologia.</p></div></div><div id="ranking" class="ranking"></div></section>
-<section id="radar-local" class="panel source-radar"><div class="panel-kicker">RADAR NACIONAL E LOCAL</div><div class="section-heading source-heading"><div><h2>Pesquisas de estados, cidades e bairros</h2><p>Consulta automática a páginas oficiais e fontes primárias dos institutos.</p></div><button id="sourceRefresh" class="refresh-button" type="button">Atualizar fontes</button></div><div class="source-controls"><label for="sourceSearch"><span>Local ou instituto</span><input id="sourceSearch" type="search" placeholder="Ex.: Itaboraí, Niterói, Curitiba, bairro…" autocomplete="off"></label><label for="sourceScope"><span>Abrangência</span><select id="sourceScope"><option value="Todas">Todas</option><option value="Nacional">Nacional</option><option value="Estadual">Estadual</option><option value="Municipal">Municipal</option><option value="Bairro">Bairro</option></select></label></div><div id="sourceStatus" class="source-status checking" aria-live="polite">Consultando fontes confiáveis…</div><div id="sourceDirectory" class="source-grid"></div><div id="sourceItems" class="source-results"></div></section>
-<section class="panel methodology"><div class="panel-kicker">TRANSPARÊNCIA</div><h2>Metodologia e critérios</h2><p>O painel monitora o TSE e páginas primárias de institutos. Nenhum percentual entra no gráfico sem conferência do cenário, amostra, período, margem e registro aplicável.</p><p>O detalhamento de município e bairro pode constar nos documentos do TSE. As páginas dos institutos complementam a localização e divulgação dos relatórios.</p><p>A média mensal é simples e não constitui previsão ou projeção eleitoral.</p><p class="updated">Estrutura revisada em 28 de julho de 2026.</p></section>
-<footer class="site-footer"><span>Desenvolvido por Pedro Santos</span><strong>® 2026</strong></footer>
-</main>
-<dialog id="detailDialog" class="detail-dialog"><div class="dialog-sheet"><div class="detail-top"><div class="candidate-identification"><div id="detailPhoto"></div><div><h2 id="detailName"></h2><p id="detailParty"></p></div></div><button id="closeDetail" class="close-button" type="button">Fechar</button></div><div id="detailStats" class="detail-stats"></div><div id="detailMeta" class="detail-meta"></div></div></dialog>
-<div id="tooltip" class="tooltip hidden" role="status"></div>
-<script src="data.js"></script><script src="app.js"></script><script src="tse-live.js"></script><script src="sources.js"></script>
+  <div id="bootScreen" class="boot-screen" aria-hidden="true">
+    <div class="boot-flag"><span></span></div>
+    <strong>CARREGANDO CENTRAL ELEITORAL</strong>
+    <div class="boot-progress"><i></i></div>
+  </div>
+
+  <header class="broadcast-header">
+    <a class="brand" href="#overview" aria-label="Ir para visão geral">
+      <span class="brand-mark"><i></i></span>
+      <span><strong>PESQUISAS ELEITORAIS <em>2026</em></strong><small>ELEIÇÕES GERAIS • BRASIL</small></span>
+    </a>
+    <div class="source-ticker" aria-label="Fontes monitoradas">
+      <span class="ticker-label">FONTES ATIVAS</span>
+      <div id="sourceTickerItems" class="ticker-items"></div>
+    </div>
+    <div class="live-clock"><span class="live-pill"><i></i> AO VIVO</span><strong id="liveClock">--:--:--</strong></div>
+    <button id="mobileMenuButton" class="mobile-menu-button" type="button" aria-label="Abrir menu">☰</button>
+  </header>
+
+  <div class="app-shell">
+    <aside id="sidebar" class="sidebar">
+      <nav id="mainNav" aria-label="Navegação principal">
+        <button class="nav-item active" data-view="overview"><span>◈</span>Visão geral</button>
+        <button class="nav-item" data-view="president"><span>♙</span>Presidente</button>
+        <button class="nav-item" data-view="governors"><span>◇</span>Governadores</button>
+        <button class="nav-item" data-view="senate"><span>◉</span>Senado</button>
+        <button class="nav-item" data-view="chamber"><span>▥</span>Câmara Federal</button>
+        <button class="nav-item" data-view="assemblies"><span>▦</span>Assembleias</button>
+        <button class="nav-item" data-view="district"><span>▤</span>Distritais</button>
+        <button class="nav-item" data-view="local"><span>⌖</span>Cidades e bairros</button>
+        <button class="nav-item" data-view="simulation"><span>⌁</span>Simulação do futuro</button>
+        <button class="nav-item" data-view="registry"><span>≣</span>Registros TSE</button>
+        <button class="nav-item" data-view="sources"><span>⊙</span>Fontes</button>
+        <button class="nav-item" data-view="methodology"><span>ⓘ</span>Metodologia</button>
+      </nav>
+      <div class="sidebar-brazil" aria-hidden="true"><i></i><b></b></div>
+      <div class="sidebar-owner">Desenvolvido por<br><strong>Pedro Santos ® 2026</strong></div>
+    </aside>
+
+    <main class="workspace">
+      <section id="overview" class="view active" data-title="Visão geral">
+        <div class="dashboard-grid">
+          <article class="panel presidential-panel reveal">
+            <div class="panel-heading">
+              <div><span class="panel-kicker">ELEIÇÃO PRESIDENCIAL</span><h1>Intenção de voto — Presidente</h1><p>Média simples das pesquisas validadas • Primeiro turno</p></div>
+              <div class="data-badge"><i></i><span id="presidentialUpdate">Atualizado</span></div>
+            </div>
+            <div id="candidateCards" class="candidate-cards"></div>
+            <div class="chart-toolbar">
+              <div><strong>Evolução das intenções de voto</strong><span>Média móvel e pesquisas individuais</span></div>
+              <div class="chart-modes" role="group" aria-label="Modo do gráfico">
+                <button class="chart-mode active" data-mode="line">Linhas</button>
+                <button class="chart-mode" data-mode="bar">Barras</button>
+                <button class="chart-mode" data-mode="area">Área</button>
+              </div>
+            </div>
+            <div class="chart-stage"><svg id="mainChart" role="img" aria-label="Evolução das pesquisas presidenciais"></svg><div id="chartTooltip" class="chart-tooltip hidden"></div></div>
+            <div id="chartLegend" class="chart-legend"></div>
+            <p class="disclaimer">A média simples não é uma projeção eleitoral e não substitui modelos estatísticos ponderados.</p>
+          </article>
+
+          <article class="panel candidate-detail-panel reveal delay-1">
+            <div class="panel-heading compact"><div><span class="panel-kicker">DETALHES DO CANDIDATO</span><h2 id="featuredName">Candidato</h2></div></div>
+            <div id="featuredCandidate" class="featured-candidate"></div>
+            <div class="section-label">Histórico recente</div>
+            <div class="table-scroll"><table class="compact-table"><thead><tr><th>Data</th><th>Instituto</th><th>Abrangência</th><th>Amostra</th><th>Resultado</th></tr></thead><tbody id="featuredHistory"></tbody></table></div>
+            <button id="openCandidateDetails" class="wide-action" type="button">Ver todas as pesquisas deste candidato</button>
+          </article>
+
+          <article class="panel local-panel reveal delay-2">
+            <div class="panel-heading"><div><span class="panel-kicker">DADOS LOCAIS</span><h2>Pesquisas de estados, cidades e bairros</h2><p>Registros oficiais e publicações primárias localizadas.</p></div><button id="refreshLocal" class="action-button" type="button">Atualizar dados</button></div>
+            <div class="filter-row">
+              <label><span>Cargo</span><select id="localOffice"><option value="Todos">Todos</option><option>Presidente</option><option>Governador</option><option>Senador</option><option>Deputado Federal</option><option>Deputado Estadual</option><option>Deputado Distrital</option></select></label>
+              <label class="grow"><span>Localidade</span><input id="localSearch" type="search" placeholder="Buscar estado, cidade ou bairro…"></label>
+              <label><span>UF</span><select id="localUf"><option value="Todas">Todas</option></select></label>
+              <label><span>Fonte</span><select id="localSource"><option value="Todas">Todas</option></select></label>
+            </div>
+            <div class="local-layout">
+              <div class="table-scroll"><table class="data-table"><thead><tr><th>Local</th><th>Fonte</th><th>Data</th><th>Cargo/cenário</th><th>Status</th><th></th></tr></thead><tbody id="localTableBody"></tbody></table></div>
+              <div class="map-card"><div id="brazilMap" class="brazil-map" aria-label="Mapa ilustrativo do Brasil"><svg viewBox="0 0 500 480" role="img"><path id="mapShape" d="M203 25l61 19 24 42 45 18 30 51 72 23 10 46-38 48-15 72-57 38-24 71-56-4-35-44-62-7-28-52-55-25 20-58-37-51 37-48 4-60 57-27 47-32z"></path><g id="mapPoints"></g></svg></div><div class="map-legend"><span><i class="dot green"></i>Registro com resultado</span><span><i class="dot yellow"></i>Registro sem resultado localizado</span></div></div>
+            </div>
+          </article>
+
+          <article class="panel sources-panel reveal delay-3">
+            <div class="panel-heading compact"><div><span class="panel-kicker">MONITORAMENTO</span><h2>Fontes monitoradas</h2></div></div>
+            <div id="sourcesList" class="sources-list"></div>
+            <div class="auto-update"><span>Atualização automática</span><strong>A cada 15 minutos</strong></div>
+            <div class="monitor-footer"><span><i></i> AO VIVO</span><strong id="sourcesTime">--:--:--</strong></div>
+          </article>
+        </div>
+      </section>
+
+      <section id="president" class="view"><div class="view-header"><span>PRESIDÊNCIA DA REPÚBLICA</span><h1>Pesquisas presidenciais de 2026</h1><p>Primeiro turno, segundo turno, rejeição e evolução por instituto.</p></div><div id="presidentFull" class="content-grid"></div></section>
+      <section id="governors" class="view"><div class="view-header"><span>27 DISPUTAS</span><h1>Governadores</h1><p>Pesquisas e projeções separadas por unidade da Federação.</p></div><div id="governorGrid" class="state-grid"></div></section>
+      <section id="senate" class="view"><div class="view-header"><span>54 CADEIRAS EM DISPUTA</span><h1>Senado Federal</h1><p>Duas vagas por UF em 2026. Projeções exibidas somente quando há base suficiente.</p></div><div class="content-grid"><article class="panel"><div id="senateHemicycle" class="hemicycle"></div></article><article class="panel"><div id="senateStates" class="state-grid compact-grid"></div></article></div></section>
+      <section id="chamber" class="view"><div class="view-header"><span>513 CADEIRAS</span><h1>Câmara dos Deputados</h1><p>Simulação proporcional por UF e partido.</p></div><div class="content-grid"><article class="panel"><div id="chamberHemicycle" class="hemicycle large"></div></article><article class="panel"><div id="partyProjectionTable"></div></article></div></section>
+      <section id="assemblies" class="view"><div class="view-header"><span>ASSEMBLEIAS LEGISLATIVAS</span><h1>Projeção estadual</h1><p>Cadeiras por partido e nível de confiança por UF.</p></div><div id="assemblyGrid" class="state-grid"></div></section>
+      <section id="district" class="view"><div class="view-header"><span>DISTRITO FEDERAL</span><h1>Deputados distritais</h1><p>Simulação das 24 cadeiras da Câmara Legislativa do DF.</p></div><div class="content-grid"><article class="panel"><div id="districtHemicycle" class="hemicycle"></div></article><article class="panel empty-state"><strong>Dados insuficientes</strong><p>A projeção será ativada quando houver pesquisas partidárias ou nominais adequadas.</p></article></div></section>
+      <section id="local" class="view"><div class="view-header"><span>COBERTURA LOCAL</span><h1>Estados, cidades e bairros</h1><p>Busca em registros oficiais e fontes primárias.</p></div><article class="panel"><div id="localExtended"></div></article></section>
+
+      <section id="simulation" class="view">
+        <div class="view-header warning"><span>SIMULAÇÃO — NÃO É RESULTADO OFICIAL</span><h1>Ambiente de simulação do futuro</h1><p>Cenários estatísticos baseados nos dados disponíveis e parâmetros configuráveis.</p></div>
+        <div class="simulation-layout">
+          <aside class="panel simulation-controls">
+            <span class="panel-kicker">CONFIGURAÇÃO</span><h2>Cenário</h2>
+            <label><span>Casa/cargo</span><select id="simulationOffice"><option value="president">Presidente</option><option value="senate">Senado</option><option value="chamber">Câmara Federal</option><option value="assembly">Assembleia Estadual</option><option value="district">Deputados Distritais</option></select></label>
+            <label><span>Modelo</span><select id="simulationScenario"><option value="current">Cenário atual</option><option value="conservative">Conservador</option><option value="growth">Continuidade da tendência</option><option value="manual">Configuração manual</option></select></label>
+            <label><span>Distribuição dos indecisos</span><select id="undecidedMode"><option value="proportional">Proporcional</option><option value="leader">Maior peso no líder</option><option value="opposition">Maior peso na oposição</option><option value="none">Manter indecisos</option></select></label>
+            <label><span>Comparecimento: <b id="turnoutValue">78%</b></span><input id="turnout" type="range" min="55" max="95" value="78"></label>
+            <label><span>Simulações: <b id="runsValue">5.000</b></span><input id="simulationRuns" type="range" min="1000" max="10000" step="1000" value="5000"></label>
+            <button id="runSimulation" class="simulation-button" type="button">Executar simulação</button>
+          </aside>
+          <div class="simulation-results">
+            <article class="panel simulation-progress-panel"><div id="simulationProgress" class="simulation-progress"><div class="progress-copy"><span>Simulação pronta</span><strong>Configure e execute um cenário</strong></div><div class="progress-track"><i></i></div></div></article>
+            <article class="panel"><div class="panel-heading"><div><span class="panel-kicker">RESULTADO DO CENÁRIO</span><h2 id="simulationTitle">Projeção atual</h2></div><span class="simulation-stamp">SIMULAÇÃO</span></div><div id="simulationOutput" class="simulation-output empty-state"><strong>Nenhuma simulação executada</strong><p>Os resultados aparecerão aqui com faixa de incerteza e nível de confiança.</p></div></article>
+            <article class="panel"><div class="panel-heading compact"><div><span class="panel-kicker">COMPOSIÇÃO PROJETADA</span><h2>Cadeiras por partido</h2></div></div><div id="simulationSeats" class="hemicycle"></div></article>
+          </div>
+        </div>
+      </section>
+
+      <section id="registry" class="view"><div class="view-header"><span>BASE OFICIAL TSE</span><h1>Pesquisas registradas em 2026</h1><p>Todos os registros localizados no conjunto oficial, mesmo quando os percentuais não foram divulgados.</p></div><article class="panel"><div class="registry-summary" id="registrySummary"></div><div class="filter-row registry-filters"><label class="grow"><span>Buscar</span><input id="registrySearch" type="search" placeholder="Registro, instituto, UF, município ou cargo…"></label><label><span>Cargo</span><select id="registryOffice"><option value="Todos">Todos</option></select></label><label><span>UF</span><select id="registryUf"><option value="Todas">Todas</option></select></label></div><div class="table-scroll registry-table-wrap"><table class="data-table"><thead><tr><th>Registro</th><th>Cargo</th><th>UF/local</th><th>Instituto</th><th>Campo</th><th>Amostra</th><th>Situação</th></tr></thead><tbody id="registryTableBody"></tbody></table></div><button id="loadMoreRegistry" class="wide-action" type="button">Carregar mais registros</button></article></section>
+      <section id="sources" class="view"><div class="view-header"><span>TRANSPARÊNCIA</span><h1>Fontes monitoradas</h1><p>Origem, cobertura, status e última verificação.</p></div><div id="sourcesExtended" class="source-directory"></div></section>
+      <section id="methodology" class="view"><div class="view-header"><span>COMO FUNCIONA</span><h1>Metodologia e limitações</h1></div><article class="panel methodology-content"><h2>Separação obrigatória</h2><p>Pesquisa registrada, resultado publicado, média, projeção e apuração oficial são camadas distintas. O sistema nunca apresenta uma simulação como resultado oficial.</p><h2>Projeções legislativas</h2><p>O simulador utiliza regras proporcionais e parâmetros informados. Quando não houver dados partidários suficientes, o sistema informa a insuficiência em vez de identificar eleitos.</p><h2>Fontes</h2><p>A base cadastral prioritária é o PesqEle/TSE. Resultados são complementados por páginas primárias dos institutos e publicações verificáveis.</p></article></section>
+
+      <footer class="site-footer"><span>Desenvolvido por Pedro Santos ® 2026</span></footer>
+    </main>
+  </div>
+
+  <dialog id="detailDialog" class="detail-dialog"><div class="dialog-content"><button id="closeDialog" class="dialog-close" type="button" aria-label="Fechar">×</button><div id="dialogBody"></div></div></dialog>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+  <script src="sources.js"></script>
+  <script src="simulator.js"></script>
 </body>
 </html>
