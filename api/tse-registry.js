@@ -27,12 +27,31 @@ function parseCsv(text, delimiter = ';') {
   return rows;
 }
 
+function encodingPenalty(value) {
+  const text = String(value || '');
+  const replacement = (text.match(/�/g) || []).length;
+  const mojibake = (text.match(/Ã.|Â.|â[€-¿]/g) || []).length;
+  const nullBytes = (text.match(/\u0000/g) || []).length;
+  return replacement * 30 + mojibake * 8 + nullBytes * 50;
+}
+
+function repairMojibake(value) {
+  const text = String(value || '');
+  if (!/[ÃÂâ]/.test(text)) return text;
+  try {
+    const repaired = iconv.decode(Buffer.from(text, 'latin1'), 'utf8');
+    return encodingPenalty(repaired) < encodingPenalty(text) ? repaired : text;
+  } catch {
+    return text;
+  }
+}
+
 function cleanKey(value) {
-  return String(value || '').replace(/^\uFEFF/, '').trim().toUpperCase();
+  return repairMojibake(value).replace(/^\uFEFF/, '').trim().toUpperCase();
 }
 function cleanValue(value) {
-  const result = String(value || '').trim();
-  return result === '#NULO#' || result === '-1' ? '' : result;
+  const result = repairMojibake(value).trim();
+  return ['#NULO#', '#NE', '-1'].includes(result.toUpperCase()) ? '' : result;
 }
 function first(record, aliases) {
   for (const alias of aliases) {
@@ -91,9 +110,9 @@ function normalizeRecord(record, fallbackUf) {
 
 function decodeCsvEntry(entry) {
   const raw = entry.getData();
-  let text = iconv.decode(raw, 'latin1');
-  const firstLine = text.split(/\r?\n/, 1)[0] || '';
-  if ((firstLine.match(/;/g) || []).length < (firstLine.match(/,/g) || []).length) text = iconv.decode(raw, 'utf8');
+  const utf8 = iconv.decode(raw, 'utf8');
+  const latin1 = iconv.decode(raw, 'latin1');
+  const text = encodingPenalty(utf8) <= encodingPenalty(latin1) ? utf8 : latin1;
   const headerLine = text.split(/\r?\n/, 1)[0] || '';
   const delimiter = (headerLine.match(/;/g) || []).length >= (headerLine.match(/,/g) || []).length ? ';' : ',';
   return { text, delimiter };
@@ -101,7 +120,7 @@ function decodeCsvEntry(entry) {
 
 async function loadRegistry() {
   if (memoryCache && Date.now() - memoryCacheAt < CACHE_TTL) return memoryCache;
-  const response = await fetch(DATA_URL, { headers: { 'User-Agent': 'Pesquisas-Eleitorais-2026/3.2' }, cache: 'no-store' });
+  const response = await fetch(DATA_URL, { headers: { 'User-Agent': 'Pesquisas-Eleitorais-2026/3.3' }, cache: 'no-store' });
   if (!response.ok) throw new Error(`TSE respondeu HTTP ${response.status}`);
   const buffer = Buffer.from(await response.arrayBuffer());
   const zip = new AdmZip(buffer);
