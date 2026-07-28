@@ -72,19 +72,20 @@ function dateKey(value) {
 function normalizeRecord(record, fallbackUf) {
   const registry = first(record, ['NR_PESQUISA','NR_REGISTRO','NR_REGISTRO_PESQUISA','NUMERO_PESQUISA','NUMERO_REGISTRO','CD_PESQUISA']) || firstByPattern(record, /REGISTRO.*PESQUISA|PESQUISA.*REGISTRO|^NR_.*PESQUISA$/);
   const officeRaw = first(record, ['DS_CARGO','DS_CARGO_PESQUISADO','CARGO','NM_CARGO']) || firstByPattern(record, /CARGO/);
-  const uf = first(record, ['SG_UF','UF','SG_UF_PESQUISA','SG_UE']) || fallbackUf;
-  const municipality = first(record, ['NM_MUNICIPIO','MUNICIPIO','NM_LOCALIDADE','DS_ABRANGENCIA']) || firstByPattern(record, /MUNICIPIO|LOCALIDADE/);
-  const state = first(record, ['NM_UF','NM_ESTADO']);
-  const location = municipality || state || first(record, ['DS_UNIDADE_ELEITORAL','NM_UE']) || firstByPattern(record, /ABRANGENCIA|UNIDADE_ELEITORAL/);
+  const uf = first(record, ['SG_UF','UF','SG_UF_PESQUISA']) || fallbackUf;
+  const municipality = first(record, ['NM_MUNICIPIO','MUNICIPIO','NM_LOCALIDADE']);
+  const electionUnit = first(record, ['NM_UE','DS_UNIDADE_ELEITORAL']);
+  const stateName = first(record, ['NM_UF','NM_ESTADO']);
+  const location = municipality || electionUnit || stateName || (uf === 'BR' ? 'Brasil' : '');
   const institute = first(record, ['NM_EMPRESA','NM_INSTITUTO','NM_RAZAO_SOCIAL','EMPRESA','INSTITUTO','NM_EMPRESA_CONTRATADA']) || firstByPattern(record, /NM_.*EMPRESA|NM_.*INSTITUTO|RAZAO_SOCIAL/);
   const company = first(record, ['NR_CNPJ_EMPRESA','CNPJ_EMPRESA','NR_CNPJ_INSTITUTO']) || firstByPattern(record, /CNPJ/);
   const fieldStart = normalizeDate(first(record, ['DT_INICIO_PESQUISA','DT_INICIO','DATA_INICIO','DT_INICIO_CAMPO']) || firstByPattern(record, /DT_.*INICIO|DATA_.*INICIO/));
   const fieldEnd = normalizeDate(first(record, ['DT_FIM_PESQUISA','DT_FIM','DATA_FIM','DT_FIM_CAMPO']) || firstByPattern(record, /DT_.*FIM|DATA_.*FIM/));
   const publication = normalizeDate(first(record, ['DT_DIVULGACAO','DT_PUBLICACAO','DATA_DIVULGACAO']) || firstByPattern(record, /DIVULGACAO|PUBLICACAO/));
   const sample = first(record, ['QT_ENTREVISTADOS','QT_PESSOAS_ENTREVISTADAS','TAMANHO_AMOSTRA','QT_AMOSTRA']) || firstByPattern(record, /ENTREVIST|AMOSTRA/);
-  const margin = first(record, ['VR_MARGEM_ERRO','MARGEM_ERRO','DS_MARGEM_ERRO']) || firstByPattern(record, /MARGEM/);
+  const margin = first(record, ['VR_MARGEM_ERRO','MARGEM_ERRO','DS_MARGEM_ERRO']);
   const status = first(record, ['DS_SITUACAO_PESQUISA','DS_SITUACAO','SITUACAO']) || firstByPattern(record, /SITUACAO/);
-  const scope = first(record, ['DS_ABRANGENCIA','TP_ABRANGENCIA','ABRANGENCIA']) || firstByPattern(record, /ABRANGENCIA/);
+  const scope = first(record, ['DS_ABRANGENCIA','TP_ABRANGENCIA','ABRANGENCIA']);
   return { registry, office: normalizeOffice(officeRaw), uf: uf === 'BR' ? 'BR' : uf, location, institute, company, fieldStart, fieldEnd, publication, sample, margin, status: status || 'Registrada', scope, hasResults: false };
 }
 
@@ -100,7 +101,7 @@ function decodeCsvEntry(entry) {
 
 async function loadRegistry() {
   if (memoryCache && Date.now() - memoryCacheAt < CACHE_TTL) return memoryCache;
-  const response = await fetch(DATA_URL, { headers: { 'User-Agent': 'Pesquisas-Eleitorais-2026/3.1' }, cache: 'no-store' });
+  const response = await fetch(DATA_URL, { headers: { 'User-Agent': 'Pesquisas-Eleitorais-2026/3.2' }, cache: 'no-store' });
   if (!response.ok) throw new Error(`TSE respondeu HTTP ${response.status}`);
   const buffer = Buffer.from(await response.arrayBuffer());
   const zip = new AdmZip(buffer);
