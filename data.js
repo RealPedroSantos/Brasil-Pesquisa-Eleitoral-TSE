@@ -1,12 +1,12 @@
 window.ELECTION_DATA = {
   candidates: [
-    { id:'lula', name:'Lula', party:'PT', initials:'LU', color:'#4aa8ff', photo:'/api/image?id=lula', credit:'https://commons.wikimedia.org/wiki/File:17.06.2025_-_Foto_Oficial_(54596867483).jpg' },
-    { id:'flavio', name:'Flávio Bolsonaro', party:'PL', initials:'FB', color:'#ff6b6b', photo:'/api/image?id=flavio', credit:'https://commons.wikimedia.org/wiki/File:Fl%C3%A1vio_Bolsonaro_04_2026.jpg' },
-    { id:'renan', name:'Renan Santos', party:'Missão', initials:'RS', color:'#f0b44d', photo:'/api/image?id=renan', credit:'https://commons.wikimedia.org/wiki/File:Renan_Santos.jpg' },
-    { id:'caiado', name:'Ronaldo Caiado', party:'PSD', initials:'RC', color:'#35c98b', photo:'/api/image?id=caiado', credit:'https://commons.wikimedia.org/wiki/File:Foto_oficial_de_Ronaldo_Caiado.jpg' },
-    { id:'zema', name:'Romeu Zema', party:'Novo', initials:'RZ', color:'#9f7aea', photo:'/api/image?id=zema', credit:'https://commons.wikimedia.org/wiki/File:Romeu_Zema_2025_(cropped).jpg' },
-    { id:'cury', name:'Augusto Cury', party:'Avante', initials:'AC', color:'#22c1c3', photo:'/api/image?id=cury', credit:'https://commons.wikimedia.org/wiki/File:Augusto_Cury.jpg' },
-    { id:'daciolo', name:'Cabo Daciolo', party:'Mobiliza', initials:'CD', color:'#ef7ab8', photo:'/api/image?id=daciolo', credit:'https://commons.wikimedia.org/wiki/File:Cabo_Daciolo_em_2022.jpg' }
+    { id:'lula', name:'Lula', party:'PT', initials:'LU', color:'#4aa8ff', photo:'/api/image?id=lula&v=2', credit:'https://commons.wikimedia.org/wiki/File:17.06.2025_-_Foto_Oficial_(54596867483).jpg' },
+    { id:'flavio', name:'Flávio Bolsonaro', party:'PL', initials:'FB', color:'#ff6b6b', photo:'/api/image?id=flavio&v=2', credit:'https://commons.wikimedia.org/wiki/File:Fl%C3%A1vio_Bolsonaro_04_2026.jpg' },
+    { id:'renan', name:'Renan Santos', party:'Missão', initials:'RS', color:'#f0b44d', photo:'/api/image?id=renan&v=2', credit:'https://commons.wikimedia.org/wiki/File:Renan_Santos.jpg' },
+    { id:'caiado', name:'Ronaldo Caiado', party:'PSD', initials:'RC', color:'#35c98b', photo:'/api/image?id=caiado&v=2', credit:'https://commons.wikimedia.org/wiki/File:Foto_oficial_de_Ronaldo_Caiado.jpg' },
+    { id:'zema', name:'Romeu Zema', party:'Novo', initials:'RZ', color:'#9f7aea', photo:'/api/image?id=zema&v=2', credit:'https://commons.wikimedia.org/wiki/File:Romeu_Zema_2025_(cropped).jpg' },
+    { id:'cury', name:'Augusto Cury', party:'Avante', initials:'AC', color:'#22c1c3', photo:'/api/image?id=cury&v=2', credit:'https://commons.wikimedia.org/wiki/File:Augusto_Cury.jpg' },
+    { id:'daciolo', name:'Cabo Daciolo', party:'Mobiliza', initials:'CD', color:'#ef7ab8', photo:'/api/image?id=daciolo&v=2', credit:'https://commons.wikimedia.org/wiki/File:Cabo_Daciolo_em_2022.jpg' }
   ],
   polls: [
     {date:'2026-02-27',label:'27 fev',institute:'AtlasIntel/Bloomberg',field:'fevereiro de 2026',publication:'27 fev 2026',sample:'não informado na fonte resumida',margin:'não informada na fonte resumida',registry:'consultar PesqEle/TSE',source:'https://elpais.com/america/2026-02-27/bolsonaro-hijo-empata-con-lula-por-primera-vez-en-una-encuesta-electoral-en-brasil.html',values:{Lula:45,'Flávio Bolsonaro':39}},
