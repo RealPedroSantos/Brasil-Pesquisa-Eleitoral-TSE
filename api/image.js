@@ -37,12 +37,15 @@ module.exports = async function handler(req, res) {
 
     const contentType = upstream.headers.get('content-type') || 'image/jpeg';
     const buffer = Buffer.from(await upstream.arrayBuffer());
+    console.info(`[candidate-photo] ${id} upstream ${contentType} ${buffer.length} bytes`);
+
     res.statusCode = 200;
     res.setHeader('Content-Type', contentType);
     res.setHeader('Cache-Control', 'public, max-age=86400, s-maxage=2592000, stale-while-revalidate=604800');
     res.setHeader('X-Content-Type-Options', 'nosniff');
     return res.end(buffer);
   } catch (error) {
+    console.warn(`[candidate-photo] ${id} fallback ${error?.name || 'Error'} ${error?.message || ''}`);
     res.statusCode = 200;
     res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
     res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=3600');
