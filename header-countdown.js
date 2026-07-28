@@ -95,8 +95,73 @@
 (() => {
   'use strict';
 
-  const TARGET_BACKGROUND = /^rgba\(\s*2\s*,\s*10\s*,\s*18\s*,\s*(?:0?\.5|50%)\s*\)$/i;
   const REMOVE_SELECTOR = '#electionStoryNav, .election-story-nav, article.sources-panel';
+  const TARGET_BACKGROUNDS = new Set([
+    'rgba(2,10,18,.5)',
+    'rgba(2,10,18,0.5)',
+    'rgba(2,10,18,50%)'
+  ]);
+
+  function compactCssValue(value) {
+    return String(value || '').toLowerCase().replace(/\s+/g, '');
+  }
+
+  function isTargetBackground(value) {
+    return TARGET_BACKGROUNDS.has(compactCssValue(value));
+  }
+
+  function ensurePermanentOverrides() {
+    let style = document.getElementById('requestedPermanentCleanup');
+    if (style) return style;
+
+    style = document.createElement('style');
+    style.id = 'requestedPermanentCleanup';
+    style.textContent = `
+      #electionStoryNav,
+      .election-story-nav,
+      article.sources-panel {
+        display: none !important;
+      }
+
+      .office-controls {
+        background: transparent !important;
+        background-color: transparent !important;
+      }
+    `;
+    document.head.appendChild(style);
+    return style;
+  }
+
+  function rewriteCssRuleList(ruleList) {
+    if (!ruleList) return;
+
+    Array.from(ruleList).forEach((rule) => {
+      if (rule.cssRules) {
+        rewriteCssRuleList(rule.cssRules);
+      }
+
+      const style = rule.style;
+      if (!style) return;
+
+      const background = style.getPropertyValue('background');
+      const backgroundColor = style.getPropertyValue('background-color');
+
+      if (isTargetBackground(background) || isTargetBackground(backgroundColor)) {
+        style.setProperty('background', 'transparent', 'important');
+        style.setProperty('background-color', 'transparent', 'important');
+      }
+    });
+  }
+
+  function rewriteAllStyleSheets() {
+    Array.from(document.styleSheets).forEach((sheet) => {
+      try {
+        rewriteCssRuleList(sheet.cssRules);
+      } catch {
+        // Folhas de terceiros podem bloquear acesso ao CSSOM. As folhas do app são da mesma origem.
+      }
+    });
+  }
 
   function removeRequestedElements(root = document) {
     if (root.nodeType === Node.ELEMENT_NODE && root.matches?.(REMOVE_SELECTOR)) {
@@ -113,9 +178,18 @@
 
     elements.forEach((element) => {
       if (!element.isConnected) return;
-      const backgroundColor = getComputedStyle(element).backgroundColor;
-      if (TARGET_BACKGROUND.test(backgroundColor)) {
+
+      const inlineBackground = element.style.getPropertyValue('background');
+      const inlineBackgroundColor = element.style.getPropertyValue('background-color');
+      const computedBackgroundColor = getComputedStyle(element).backgroundColor;
+
+      if (
+        isTargetBackground(inlineBackground) ||
+        isTargetBackground(inlineBackgroundColor) ||
+        isTargetBackground(computedBackgroundColor)
+      ) {
         element.style.setProperty('background', 'transparent', 'important');
+        element.style.setProperty('background-color', 'transparent', 'important');
       }
     });
   }
@@ -149,13 +223,21 @@
   }
 
   function applyRequestedCleanup(root = document) {
+    ensurePermanentOverrides();
     protectSourceRendering();
+    rewriteAllStyleSheets();
     removeRequestedElements(root);
     makeTargetBackgroundTransparent(root);
   }
 
   function initCleanup() {
     applyRequestedCleanup();
+
+    document.querySelectorAll('link[rel="stylesheet"]').forEach((link) => {
+      link.addEventListener('load', () => applyRequestedCleanup(), { once: true });
+    });
+
+    window.addEventListener('load', () => applyRequestedCleanup(), { once: true });
 
     const pendingRoots = new Set();
     let scheduled = false;
@@ -164,6 +246,7 @@
       scheduled = false;
       const roots = pendingRoots.size ? Array.from(pendingRoots) : [document];
       pendingRoots.clear();
+      rewriteAllStyleSheets();
       roots.forEach((root) => applyRequestedCleanup(root));
     };
 
