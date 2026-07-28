@@ -7,6 +7,7 @@
   <title>Brasil — Pesquisa Eleitoral TSE 2026</title>
   <meta name="description" content="Painel interativo com a trajetória das pesquisas eleitorais nacionais para presidente do Brasil em 2026.">
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="tse-live.css">
 </head>
 <body>
   <main class="container">
@@ -20,6 +21,18 @@
     </header>
 
     <section class="summary" id="summary" aria-label="Resumo dos dados"></section>
+
+    <section id="tseLiveCard" class="tse-live checking" aria-live="polite">
+      <span id="tseLiveDot" class="live-dot"></span>
+      <div class="tse-live-copy">
+        <strong id="tseLiveTitle">Verificando a base oficial do TSE</strong>
+        <span id="tseLiveDetails">Consultando o arquivo atualizado de pesquisas eleitorais de 2026.</span>
+      </div>
+      <div class="tse-live-meta">
+        <small id="tseLiveChecked">Conectando…</small>
+        <a id="tseLiveLink" href="https://dadosabertos.tse.jus.br/dataset/pesquisas-eleitorais-2026" target="_blank" rel="noopener">Abrir dados oficiais</a>
+      </div>
+    </section>
 
     <section class="panel controls" aria-label="Controles do gráfico">
       <label class="control-group" for="viewMode">
@@ -60,13 +73,14 @@
 
     <section class="panel methodology">
       <h2>Metodologia e cobertura</h2>
-      <p>O painel reúne pesquisas nacionais estimuladas de primeiro turno cujos percentuais puderam ser conferidos em publicações públicas. O PesqEle/TSE registra os levantamentos e seus documentos, mas não fornece uma tabela única e padronizada com todos os percentuais por candidato.</p>
+      <p>O painel consulta automaticamente o arquivo oficial de pesquisas eleitorais de 2026 do Portal de Dados Abertos do TSE. Quando o arquivo oficial muda, o indicador acima informa que uma atualização foi detectada.</p>
+      <p>O TSE fornece os registros e metadados das pesquisas, mas os percentuais por candidato não são disponibilizados em uma tabela padronizada. Por isso, a inclusão de novos pontos no gráfico depende da publicação verificável dos resultados pelo instituto responsável.</p>
       <p>A visualização mensal calcula uma média simples das pesquisas disponíveis no mês, somente entre os levantamentos nos quais cada candidato foi testado. Ela não é projeção eleitoral nem substitui um agregador estatístico ponderado.</p>
       <details class="credits">
         <summary>Créditos das fotografias</summary>
         <p>As fotografias são carregadas por um proxy interno a partir de arquivos públicos da Wikimedia Commons. Os links de atribuição permanecem associados a cada candidato nos dados do projeto.</p>
       </details>
-      <p class="updated">Interface revisada para dispositivos móveis em 28 de julho de 2026.</p>
+      <p class="updated">Monitoramento automático do TSE ativado em 28 de julho de 2026.</p>
     </section>
   </main>
 
@@ -90,5 +104,6 @@
   <div id="tooltip" class="tooltip hidden" role="status"></div>
   <script src="data.js"></script>
   <script src="app.js"></script>
+  <script src="tse-live.js"></script>
 </body>
 </html>
