@@ -244,3 +244,29 @@
     loadCandidateDirectory();
   }
 })();
+
+(() => {
+  'use strict';
+
+  function loadElectionCountdown() {
+    if (!document.querySelector('link[href="header-countdown.css"]')) {
+      const stylesheet = document.createElement('link');
+      stylesheet.rel = 'stylesheet';
+      stylesheet.href = 'header-countdown.css';
+      document.head.appendChild(stylesheet);
+    }
+
+    if (!document.querySelector('script[src="header-countdown.js"]')) {
+      const script = document.createElement('script');
+      script.src = 'header-countdown.js';
+      script.defer = true;
+      document.body.appendChild(script);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadElectionCountdown, { once: true });
+  } else {
+    loadElectionCountdown();
+  }
+})();
