@@ -40,6 +40,12 @@ function first(record, aliases) {
   }
   return '';
 }
+function firstByPattern(record, pattern) {
+  for (const [key, value] of Object.entries(record)) {
+    if (pattern.test(key) && cleanValue(value)) return cleanValue(value);
+  }
+  return '';
+}
 function normalizeOffice(value) {
   const v = String(value || '').toUpperCase();
   if (v.includes('PRESIDENT')) return 'Presidente';
@@ -55,55 +61,75 @@ function normalizeDate(value) {
   const raw = String(value).trim();
   const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (iso) return `${iso[3]}/${iso[2]}/${iso[1]}`;
+  const compact = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+  if (compact) return `${compact[1]}/${compact[2]}/${compact[3]}`;
   return raw;
 }
-function normalizeRecord(record) {
-  const registry = first(record, ['NR_PESQUISA','NR_REGISTRO','NUMERO_PESQUISA','NUMERO_REGISTRO','CD_PESQUISA']);
-  const officeRaw = first(record, ['DS_CARGO','DS_CARGO_PESQUISADO','CARGO','NM_CARGO']);
-  const uf = first(record, ['SG_UF','UF','SG_UF_PESQUISA','SG_UE']);
-  const municipality = first(record, ['NM_MUNICIPIO','MUNICIPIO','NM_LOCALIDADE','DS_ABRANGENCIA']);
+function dateKey(value) {
+  const match = String(value || '').match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+  return match ? `${match[3]}-${match[2]}-${match[1]}` : String(value || '');
+}
+function normalizeRecord(record, fallbackUf) {
+  const registry = first(record, ['NR_PESQUISA','NR_REGISTRO','NR_REGISTRO_PESQUISA','NUMERO_PESQUISA','NUMERO_REGISTRO','CD_PESQUISA']) || firstByPattern(record, /REGISTRO.*PESQUISA|PESQUISA.*REGISTRO|^NR_.*PESQUISA$/);
+  const officeRaw = first(record, ['DS_CARGO','DS_CARGO_PESQUISADO','CARGO','NM_CARGO']) || firstByPattern(record, /CARGO/);
+  const uf = first(record, ['SG_UF','UF','SG_UF_PESQUISA','SG_UE']) || fallbackUf;
+  const municipality = first(record, ['NM_MUNICIPIO','MUNICIPIO','NM_LOCALIDADE','DS_ABRANGENCIA']) || firstByPattern(record, /MUNICIPIO|LOCALIDADE/);
   const state = first(record, ['NM_UF','NM_ESTADO']);
-  const location = municipality || state || first(record, ['DS_UNIDADE_ELEITORAL','NM_UE']);
-  const institute = first(record, ['NM_EMPRESA','NM_INSTITUTO','NM_RAZAO_SOCIAL','EMPRESA','INSTITUTO','NM_EMPRESA_CONTRATADA']);
-  const company = first(record, ['NR_CNPJ_EMPRESA','CNPJ_EMPRESA','NR_CNPJ_INSTITUTO']);
-  const fieldStart = normalizeDate(first(record, ['DT_INICIO_PESQUISA','DT_INICIO','DATA_INICIO','DT_INICIO_CAMPO']));
-  const fieldEnd = normalizeDate(first(record, ['DT_FIM_PESQUISA','DT_FIM','DATA_FIM','DT_FIM_CAMPO']));
-  const publication = normalizeDate(first(record, ['DT_DIVULGACAO','DT_PUBLICACAO','DATA_DIVULGACAO']));
-  const sample = first(record, ['QT_ENTREVISTADOS','QT_PESSOAS_ENTREVISTADAS','TAMANHO_AMOSTRA','QT_AMOSTRA']);
-  const margin = first(record, ['VR_MARGEM_ERRO','MARGEM_ERRO','DS_MARGEM_ERRO']);
-  const status = first(record, ['DS_SITUACAO_PESQUISA','DS_SITUACAO','SITUACAO']);
-  const scope = first(record, ['DS_ABRANGENCIA','TP_ABRANGENCIA','ABRANGENCIA']);
+  const location = municipality || state || first(record, ['DS_UNIDADE_ELEITORAL','NM_UE']) || firstByPattern(record, /ABRANGENCIA|UNIDADE_ELEITORAL/);
+  const institute = first(record, ['NM_EMPRESA','NM_INSTITUTO','NM_RAZAO_SOCIAL','EMPRESA','INSTITUTO','NM_EMPRESA_CONTRATADA']) || firstByPattern(record, /NM_.*EMPRESA|NM_.*INSTITUTO|RAZAO_SOCIAL/);
+  const company = first(record, ['NR_CNPJ_EMPRESA','CNPJ_EMPRESA','NR_CNPJ_INSTITUTO']) || firstByPattern(record, /CNPJ/);
+  const fieldStart = normalizeDate(first(record, ['DT_INICIO_PESQUISA','DT_INICIO','DATA_INICIO','DT_INICIO_CAMPO']) || firstByPattern(record, /DT_.*INICIO|DATA_.*INICIO/));
+  const fieldEnd = normalizeDate(first(record, ['DT_FIM_PESQUISA','DT_FIM','DATA_FIM','DT_FIM_CAMPO']) || firstByPattern(record, /DT_.*FIM|DATA_.*FIM/));
+  const publication = normalizeDate(first(record, ['DT_DIVULGACAO','DT_PUBLICACAO','DATA_DIVULGACAO']) || firstByPattern(record, /DIVULGACAO|PUBLICACAO/));
+  const sample = first(record, ['QT_ENTREVISTADOS','QT_PESSOAS_ENTREVISTADAS','TAMANHO_AMOSTRA','QT_AMOSTRA']) || firstByPattern(record, /ENTREVIST|AMOSTRA/);
+  const margin = first(record, ['VR_MARGEM_ERRO','MARGEM_ERRO','DS_MARGEM_ERRO']) || firstByPattern(record, /MARGEM/);
+  const status = first(record, ['DS_SITUACAO_PESQUISA','DS_SITUACAO','SITUACAO']) || firstByPattern(record, /SITUACAO/);
+  const scope = first(record, ['DS_ABRANGENCIA','TP_ABRANGENCIA','ABRANGENCIA']) || firstByPattern(record, /ABRANGENCIA/);
   return { registry, office: normalizeOffice(officeRaw), uf: uf === 'BR' ? 'BR' : uf, location, institute, company, fieldStart, fieldEnd, publication, sample, margin, status: status || 'Registrada', scope, hasResults: false };
+}
+
+function decodeCsvEntry(entry) {
+  const raw = entry.getData();
+  let text = iconv.decode(raw, 'latin1');
+  const firstLine = text.split(/\r?\n/, 1)[0] || '';
+  if ((firstLine.match(/;/g) || []).length < (firstLine.match(/,/g) || []).length) text = iconv.decode(raw, 'utf8');
+  const headerLine = text.split(/\r?\n/, 1)[0] || '';
+  const delimiter = (headerLine.match(/;/g) || []).length >= (headerLine.match(/,/g) || []).length ? ';' : ',';
+  return { text, delimiter };
 }
 
 async function loadRegistry() {
   if (memoryCache && Date.now() - memoryCacheAt < CACHE_TTL) return memoryCache;
-  const response = await fetch(DATA_URL, { headers: { 'User-Agent': 'Pesquisas-Eleitorais-2026/3.0' }, cache: 'no-store' });
+  const response = await fetch(DATA_URL, { headers: { 'User-Agent': 'Pesquisas-Eleitorais-2026/3.1' }, cache: 'no-store' });
   if (!response.ok) throw new Error(`TSE respondeu HTTP ${response.status}`);
   const buffer = Buffer.from(await response.arrayBuffer());
   const zip = new AdmZip(buffer);
-  const entry = zip.getEntries().find(item => !item.isDirectory && item.entryName.toLowerCase().endsWith('.csv'));
-  if (!entry) throw new Error('CSV de pesquisas não encontrado no arquivo do TSE.');
-  const raw = entry.getData();
-  let text = iconv.decode(raw, 'latin1');
-  if ((text.match(/;/g) || []).length < (text.match(/,/g) || []).length) text = iconv.decode(raw, 'utf8');
-  const delimiter = (text.split('\n')[0].match(/;/g) || []).length >= (text.split('\n')[0].match(/,/g) || []).length ? ';' : ',';
-  const rows = parseCsv(text, delimiter);
-  const headers = (rows.shift() || []).map(cleanKey);
+  const entries = zip.getEntries().filter(item => !item.isDirectory && item.entryName.toLowerCase().endsWith('.csv'));
+  if (!entries.length) throw new Error('CSVs de pesquisas não encontrados no arquivo do TSE.');
+
   const seen = new Set();
   const records = [];
-  for (const values of rows) {
-    const rawRecord = Object.fromEntries(headers.map((header, index) => [header, values[index] || '']));
-    const normalized = normalizeRecord(rawRecord);
-    const key = normalized.registry || [normalized.office,normalized.uf,normalized.institute,normalized.fieldStart,normalized.fieldEnd].join('|');
-    if (!key || seen.has(key)) continue;
-    seen.add(key);
-    records.push(normalized);
+  const fileHeaders = {};
+  for (const entry of entries) {
+    const ufMatch = entry.entryName.match(/_([A-Z]{2}|BR)\.csv$/i);
+    const fallbackUf = ufMatch ? ufMatch[1].toUpperCase() : '';
+    const { text, delimiter } = decodeCsvEntry(entry);
+    const rows = parseCsv(text, delimiter);
+    const headers = (rows.shift() || []).map(cleanKey);
+    fileHeaders[entry.entryName] = headers;
+    for (const values of rows) {
+      const rawRecord = Object.fromEntries(headers.map((header, index) => [header, values[index] || '']));
+      const normalized = normalizeRecord(rawRecord, fallbackUf);
+      const key = normalized.registry || [normalized.office,normalized.uf,normalized.institute,normalized.fieldStart,normalized.fieldEnd,normalized.publication].join('|');
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      records.push(normalized);
+    }
   }
-  records.sort((a,b) => `${b.fieldEnd||b.publication||''}`.localeCompare(`${a.fieldEnd||a.publication||''}`));
+  records.sort((a,b) => dateKey(b.fieldEnd || b.publication).localeCompare(dateKey(a.fieldEnd || a.publication)));
   const byOffice = records.reduce((acc,item)=>{acc[item.office]=(acc[item.office]||0)+1;return acc;},{});
   const byUf = records.reduce((acc,item)=>{const key=item.uf||'BR';acc[key]=(acc[key]||0)+1;return acc;},{});
-  memoryCache = { records, meta: { total: records.length, byOffice, byUf, source: DATA_URL, generatedAt: new Date().toISOString(), file: entry.entryName } };
+  memoryCache = { records, meta: { total: records.length, byOffice, byUf, source: DATA_URL, generatedAt: new Date().toISOString(), files: entries.map(entry => entry.entryName), sampleHeaders: fileHeaders[entries[0].entryName] || [] } };
   memoryCacheAt = Date.now();
   return memoryCache;
 }
