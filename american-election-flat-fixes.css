@@ -1,0 +1,174 @@
+/* Garantia final: nenhum componente editorial usa degradê, brilho ou sombra. */
+html.us-election-editorial *,
+html.us-election-editorial *::before,
+html.us-election-editorial *::after,
+html.modern-election-ui *,
+html.modern-election-ui *::before,
+html.modern-election-ui *::after {
+  background-image: none !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+html.us-election-editorial .boot-screen,
+html.modern-election-ui .boot-screen {
+  background: #002776 !important;
+  color: #ffffff !important;
+}
+
+html.us-election-editorial .boot-progress,
+html.modern-election-ui .boot-progress {
+  background: rgba(255,255,255,.28) !important;
+  border: 1px solid rgba(255,255,255,.45) !important;
+  border-radius: 0 !important;
+}
+
+html.us-election-editorial .boot-progress i,
+html.modern-election-ui .boot-progress i {
+  background: #ffdf00 !important;
+}
+
+html.us-election-editorial .boot-flag,
+html.modern-election-ui .boot-flag {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+html.us-election-editorial .auto-update,
+html.us-election-editorial .monitor-footer,
+html.us-election-editorial .source-row,
+html.us-election-editorial .mini-stat,
+html.us-election-editorial .simulation-metric,
+html.us-election-editorial .section-label,
+html.us-election-editorial .simulation-progress,
+html.us-election-editorial .progress-track,
+html.us-election-editorial .party-row,
+html.us-election-editorial .party-bar,
+html.us-election-editorial .office-tabs,
+html.us-election-editorial .office-tabs button,
+html.us-election-editorial .office-index,
+html.us-election-editorial .office-bar,
+html.us-election-editorial .candidate-result-bar,
+html.us-election-editorial .empty-state,
+html.modern-election-ui .auto-update,
+html.modern-election-ui .monitor-footer,
+html.modern-election-ui .source-row,
+html.modern-election-ui .mini-stat,
+html.modern-election-ui .simulation-metric,
+html.modern-election-ui .section-label,
+html.modern-election-ui .simulation-progress,
+html.modern-election-ui .progress-track,
+html.modern-election-ui .party-row,
+html.modern-election-ui .party-bar,
+html.modern-election-ui .office-tabs,
+html.modern-election-ui .office-tabs button,
+html.modern-election-ui .office-index,
+html.modern-election-ui .office-bar,
+html.modern-election-ui .candidate-result-bar,
+html.modern-election-ui .empty-state {
+  border-radius: 2px !important;
+  box-shadow: none !important;
+}
+
+html.us-election-editorial .auto-update,
+html.us-election-editorial .source-row,
+html.us-election-editorial .mini-stat,
+html.us-election-editorial .simulation-metric,
+html.us-election-editorial .section-label,
+html.us-election-editorial .simulation-progress,
+html.us-election-editorial .party-row,
+html.us-election-editorial .empty-state,
+html.modern-election-ui .auto-update,
+html.modern-election-ui .source-row,
+html.modern-election-ui .mini-stat,
+html.modern-election-ui .simulation-metric,
+html.modern-election-ui .section-label,
+html.modern-election-ui .simulation-progress,
+html.modern-election-ui .party-row,
+html.modern-election-ui .empty-state {
+  background: #f5f6f6 !important;
+  color: #151a1f !important;
+  border: 1px solid #c8cdd1 !important;
+}
+
+html.us-election-editorial .monitor-footer,
+html.modern-election-ui .monitor-footer {
+  background: #002776 !important;
+  color: #ffffff !important;
+  border: 1px solid #002776 !important;
+}
+
+html.us-election-editorial .progress-track,
+html.us-election-editorial .party-bar,
+html.us-election-editorial .office-bar,
+html.modern-election-ui .progress-track,
+html.modern-election-ui .party-bar,
+html.modern-election-ui .office-bar {
+  background: #d9dde0 !important;
+  border-radius: 0 !important;
+}
+
+html.us-election-editorial .progress-track i,
+html.us-election-editorial .party-bar i,
+html.us-election-editorial .office-bar i,
+html.modern-election-ui .progress-track i,
+html.modern-election-ui .party-bar i,
+html.modern-election-ui .office-bar i {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+html.us-election-editorial .simulation-stamp,
+html.modern-election-ui .simulation-stamp {
+  background: #ffdf00 !important;
+  color: #151a1f !important;
+  border: 1px solid #bca500 !important;
+  border-radius: 1px !important;
+}
+
+html.us-election-editorial .office-tabs button,
+html.modern-election-ui .office-tabs button {
+  background: #ffffff !important;
+  color: #384149 !important;
+  border: 1px solid #c8cdd1 !important;
+}
+
+html.us-election-editorial .office-tabs button.active,
+html.modern-election-ui .office-tabs button.active {
+  background: #002776 !important;
+  color: #ffffff !important;
+  border-color: #002776 !important;
+}
+
+html.us-election-editorial .office-index,
+html.modern-election-ui .office-index {
+  background: #006b3c !important;
+  color: #ffffff !important;
+  border-radius: 1px !important;
+}
+
+html.us-election-editorial .featured-portrait,
+html.modern-election-ui .featured-portrait {
+  background: #e7eaec !important;
+  border-radius: 2px !important;
+  box-shadow: none !important;
+}
+
+html.us-election-editorial .mobile-menu-button,
+html.modern-election-ui .mobile-menu-button {
+  background: #ffffff !important;
+  color: #002776 !important;
+  border: 1px solid rgba(255,255,255,.7) !important;
+  border-radius: 1px !important;
+}
+
+html.us-election-editorial .dot,
+html.us-election-editorial .ticker-source i,
+html.us-election-editorial .live-pill i,
+html.us-election-editorial .monitor-footer i,
+html.modern-election-ui .dot,
+html.modern-election-ui .ticker-source i,
+html.modern-election-ui .live-pill i,
+html.modern-election-ui .monitor-footer i {
+  border-radius: 50% !important;
+}
