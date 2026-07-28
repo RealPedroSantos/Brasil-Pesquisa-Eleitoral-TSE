@@ -30,7 +30,7 @@ function parseCsv(text, delimiter = ';') {
 function encodingPenalty(value) {
   const text = String(value || '');
   const replacement = (text.match(/�/g) || []).length;
-  const mojibake = (text.match(/Ã.|Â.|â[€-¿]/g) || []).length;
+  const mojibake = (text.match(/(?:Ã.|Â.|â.)/g) || []).length;
   const nullBytes = (text.match(/\u0000/g) || []).length;
   return replacement * 30 + mojibake * 8 + nullBytes * 50;
 }
