@@ -44,14 +44,15 @@ function latestFor(candidate) {
 }
 
 function imageMarkup(candidate, className) {
-  return `<img class="${className}" style="--candidate-color:${candidate.color}" src="${candidate.photo}" alt="Foto de ${candidate.name}" loading="lazy" decoding="async">`;
+  const facePosition = candidate.facePosition || '50% 18%';
+  return `<img class="${className}" style="--candidate-color:${candidate.color};--face-position:${facePosition};object-position:${facePosition}" src="${candidate.photo}" alt="Retrato de rosto de ${candidate.name}" loading="lazy" decoding="async">`;
 }
 
 function renderSummary() {
   const latest = polls[polls.length - 1];
   const ranked = Object.entries(latest.values).sort((a,b) => b[1] - a[1]);
   const cards = [
-    ['Pesquisas', polls.length],
+    ['Pesquisas validadas', polls.length],
     ['Candidatos', candidates.length],
     ['Líder recente', ranked[0][0]],
     ['Última publicação', latest.publication]
@@ -185,7 +186,7 @@ function renderChart() {
     defs.appendChild(clip); svg.appendChild(defs);
     const group = make('g', { role:'button', tabindex:'0', 'aria-label':`Abrir dados mais recentes de ${candidate.name}` });
     group.appendChild(make('circle', { cx:railX, cy:displayY, r:mobile ? 17 : 21, class:'photo-ring', stroke:candidate.color }));
-    group.appendChild(make('image', { x:railX-(mobile?14:18), y:displayY-(mobile?14:18), width:mobile?28:36, height:mobile?28:36, href:candidate.photo, 'clip-path':`url(#${clipId})`, preserveAspectRatio:'xMidYMid slice' }));
+    group.appendChild(make('image', { x:railX-(mobile?14:18), y:displayY-(mobile?14:18), width:mobile?28:36, height:mobile?28:36, href:candidate.photo, 'clip-path':`url(#${clipId})`, preserveAspectRatio:'xMidYMin slice' }));
     const open = () => openDetail(candidate, point.poll, point.value);
     group.addEventListener('click', open);
     group.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); open(); } });
@@ -203,7 +204,7 @@ function openDetail(candidate, poll, value) {
   document.getElementById('detailMeta').innerHTML = `
     <div class="meta"><span>Período de campo</span><div>${poll.field}</div></div>
     <div class="meta"><span>Margem e registro</span><div>${poll.margin}<br>${poll.registry}</div></div>
-    <div class="meta"><span>Fontes e fotografia</span><div>${poll.source ? `<a href="${poll.source}" target="_blank" rel="noopener">Abrir pesquisa</a><br>` : 'Média calculada pelo painel<br>'}<a href="${candidate.credit}" target="_blank" rel="noopener">Crédito da foto</a></div></div>`;
+    <div class="meta"><span>Fonte da pesquisa</span><div>${poll.source ? `<a href="${poll.source}" target="_blank" rel="noopener">Abrir publicação</a>` : 'Média calculada pelo painel'}</div></div>`;
   if (typeof dialog.showModal === 'function') dialog.showModal(); else dialog.setAttribute('open','');
 }
 
