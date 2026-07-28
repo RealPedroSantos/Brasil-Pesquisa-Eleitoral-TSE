@@ -1,0 +1,139 @@
+.audit-coverage-summary {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 1px;
+  margin: 14px 0;
+  border: 1px solid #b9c0c5;
+  background: #b9c0c5;
+}
+
+.audit-coverage-summary > div {
+  display: grid;
+  gap: 6px;
+  min-height: 92px;
+  padding: 14px;
+  background: #fff;
+}
+
+.audit-coverage-summary span {
+  color: #59636c;
+  font: 700 9px/1.3 Inter, Arial, sans-serif;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.audit-coverage-summary strong {
+  color: #151a1f;
+  font: 800 27px/1 "Barlow Condensed", Inter, sans-serif;
+}
+
+.audit-registry-coverage {
+  margin-top: 14px;
+  border-top: 3px solid #002776 !important;
+}
+
+.audit-registry-controls {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(170px, .35fr) minmax(120px, .2fr);
+  gap: 9px;
+  margin: 12px 0;
+}
+
+.audit-registry-controls input,
+.audit-registry-controls select {
+  min-height: 44px;
+  border: 1px solid #aab1b6;
+  border-radius: 2px;
+  background: #fff;
+  color: #151a1f;
+  padding: 0 11px;
+}
+
+.audit-registry-note {
+  padding: 10px 12px;
+  border: 1px solid #c8cdd1;
+  border-left: 4px solid #ffdf00;
+  background: #fffce0;
+  color: #3e464d;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.audit-registry-table-wrap {
+  width: 100%;
+  margin-top: 11px;
+  overflow-x: auto;
+  border: 1px solid #c8cdd1;
+}
+
+.audit-registry-table {
+  width: 100%;
+  min-width: 940px;
+  border-collapse: collapse;
+  background: #fff;
+  color: #20272d;
+  font: 500 10px/1.4 Inter, Arial, sans-serif;
+}
+
+.audit-registry-table th {
+  padding: 10px;
+  border-bottom: 1px solid #8e979e;
+  background: #e9ecee;
+  color: #30383f;
+  text-align: left;
+  font-size: 9px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.audit-registry-table td {
+  padding: 10px;
+  border-bottom: 1px solid #dde1e3;
+  vertical-align: top;
+}
+
+.audit-registry-table tbody tr:hover {
+  background: #f5f7f5;
+}
+
+.audit-pending-chip,
+.audit-origin {
+  display: inline-block;
+  border: 1px solid #a66c00;
+  border-radius: 1px;
+  background: #fff8d2;
+  color: #704800;
+  padding: 4px 6px;
+  font: 700 8px/1.2 Inter, Arial, sans-serif;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.audit-origin {
+  margin-top: 7px;
+  border-color: #8f979e;
+  background: #f1f3f4;
+  color: #47515a;
+}
+
+@media (max-width: 1100px) {
+  .audit-coverage-summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .audit-coverage-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .audit-registry-controls {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .audit-coverage-summary {
+    grid-template-columns: 1fr;
+  }
+}
