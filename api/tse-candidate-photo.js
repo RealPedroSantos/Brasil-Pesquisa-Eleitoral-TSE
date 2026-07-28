@@ -1,33 +1,7 @@
-function initialsSvg(name) {
-  const safeName = String(name || 'Candidato').trim();
-  const initials = safeName
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join('')
-    .toUpperCase()
-    .replace(/[^A-ZÀ-Ü0-9]/g, '') || 'C';
-
-  const escaped = safeName
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 560" role="img" aria-label="Foto ainda não disponível para ${escaped}">
-    <rect width="480" height="560" fill="#0b1a28"/>
-    <circle cx="240" cy="190" r="105" fill="#385268"/>
-    <path d="M58 560c16-151 84-232 182-232s166 81 182 232" fill="#385268"/>
-    <rect x="0" y="455" width="480" height="105" fill="#07121d"/>
-    <text x="240" y="515" text-anchor="middle" fill="#eef4f8" font-family="Arial, sans-serif" font-size="54" font-weight="700">${initials}</text>
-  </svg>`;
-}
-
-function sendFallback(res, name, maxAge = 3600) {
-  res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
-  res.setHeader('Cache-Control', `public, s-maxage=${maxAge}, stale-while-revalidate=86400`);
-  return res.status(200).send(initialsSvg(name));
+function initialsRedirect(res, name) {
+  const query = new URLSearchParams({ name: String(name || 'Candidato') });
+  res.setHeader('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
+  return res.redirect(302, `/api/public-figure-photo?${query.toString()}`);
 }
 
 function resolvePhotoUrl(data) {
@@ -51,7 +25,7 @@ module.exports = async function handler(req, res) {
   const name = String(req.query.name || 'Candidato');
 
   if (!/^[A-Z]{2}$/.test(uf) || !/^\d+$/.test(election) || !/^\d+$/.test(id)) {
-    return sendFallback(res, name);
+    return initialsRedirect(res, name);
   }
 
   const detailUrl = `https://divulgacandcontas.tse.jus.br/divulga/rest/v1/candidatura/buscar/2026/${encodeURIComponent(uf)}/${encodeURIComponent(election)}/candidato/${encodeURIComponent(id)}`;
@@ -60,21 +34,21 @@ module.exports = async function handler(req, res) {
     const detailResponse = await fetch(detailUrl, {
       headers: {
         Accept: 'application/json',
-        'User-Agent': 'Pesquisas-Eleitorais-2026/4.1'
+        'User-Agent': 'Pesquisas-Eleitorais-2026/4.2'
       },
       cache: 'no-store',
-      signal: AbortSignal.timeout(6000)
+      signal: AbortSignal.timeout(5000)
     });
 
-    if (!detailResponse.ok) return sendFallback(res, name);
+    if (!detailResponse.ok) return initialsRedirect(res, name);
 
     const data = await detailResponse.json();
     const photoUrl = resolvePhotoUrl(data);
-    if (!photoUrl) return sendFallback(res, name);
+    if (!photoUrl) return initialsRedirect(res, name);
 
     res.setHeader('Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=604800');
     return res.redirect(302, photoUrl);
   } catch {
-    return sendFallback(res, name);
+    return initialsRedirect(res, name);
   }
 };
