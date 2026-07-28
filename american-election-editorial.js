@@ -1,6 +1,14 @@
 (() => {
   'use strict';
 
+  function loadFlatFixes() {
+    if (document.querySelector('link[href="american-election-flat-fixes.css"]')) return;
+    const stylesheet = document.createElement('link');
+    stylesheet.rel = 'stylesheet';
+    stylesheet.href = 'american-election-flat-fixes.css';
+    document.head.appendChild(stylesheet);
+  }
+
   function addEditorialContext() {
     const toolbarCopy = document.querySelector('.presidential-panel .chart-toolbar > div:first-child');
     if (!toolbarCopy || toolbarCopy.querySelector('.editorial-chart-context')) return;
@@ -52,6 +60,7 @@
 
   function init() {
     document.documentElement.classList.add('us-election-editorial');
+    loadFlatFixes();
     addEditorialContext();
     normalizeInterfaceCopy();
     styleChartElements();
