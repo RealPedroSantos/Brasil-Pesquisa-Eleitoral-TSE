@@ -191,3 +191,36 @@
     document.getElementById('chartTooltip')?.classList.add('hidden');
   });
 })();
+
+(() => {
+  'use strict';
+
+  function mountTooltipAtViewportRoot() {
+    const tooltip = document.getElementById('chartTooltip');
+    if (!tooltip) return;
+
+    if (tooltip.parentElement !== document.body) {
+      document.body.appendChild(tooltip);
+    }
+
+    tooltip.style.position = 'fixed';
+    tooltip.style.pointerEvents = 'none';
+    tooltip.style.zIndex = '1000';
+  }
+
+  function hideTooltip() {
+    document.getElementById('chartTooltip')?.classList.add('hidden');
+  }
+
+  function init() {
+    mountTooltipAtViewportRoot();
+    window.addEventListener('scroll', hideTooltip, { passive: true, capture: true });
+    window.addEventListener('blur', hideTooltip);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init, { once: true });
+  } else {
+    init();
+  }
+})();
