@@ -1,109 +1,32 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#07111f">
-  <title>Brasil — Pesquisa Eleitoral TSE 2026</title>
-  <meta name="description" content="Painel interativo com a trajetória das pesquisas eleitorais nacionais para presidente do Brasil em 2026.">
-  <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="tse-live.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#04111f">
+<title>Brasil 2026 — Painel de Pesquisas</title>
+<meta name="description" content="Painel informativo de pesquisas eleitorais com fontes oficiais e institutos verificados.">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="tse-live.css">
 </head>
 <body>
-  <main class="container">
-    <header class="hero">
-      <div>
-        <span class="eyebrow">ELEIÇÃO PRESIDENCIAL 2026</span>
-        <h1>Trajetória das pesquisas nacionais</h1>
-        <p>Compare a evolução dos candidatos, toque nos pontos do gráfico e consulte os dados de cada levantamento.</p>
-      </div>
-      <a class="tse-link" href="https://pesqele-divulgacao.tse.jus.br/app/pesquisa/listar.xhtml" target="_blank" rel="noopener">Consultar PesqEle/TSE</a>
-    </header>
-
-    <section class="summary" id="summary" aria-label="Resumo dos dados"></section>
-
-    <section id="tseLiveCard" class="tse-live checking" aria-live="polite">
-      <span id="tseLiveDot" class="live-dot"></span>
-      <div class="tse-live-copy">
-        <strong id="tseLiveTitle">Verificando a base oficial do TSE</strong>
-        <span id="tseLiveDetails">Consultando o arquivo atualizado de pesquisas eleitorais de 2026.</span>
-      </div>
-      <div class="tse-live-meta">
-        <small id="tseLiveChecked">Conectando…</small>
-        <a id="tseLiveLink" href="https://dadosabertos.tse.jus.br/dataset/pesquisas-eleitorais-2026" target="_blank" rel="noopener">Abrir dados oficiais</a>
-      </div>
-    </section>
-
-    <section class="panel controls" aria-label="Controles do gráfico">
-      <label class="control-group" for="viewMode">
-        <span>Visualização</span>
-        <select id="viewMode">
-          <option value="polls">Cada pesquisa</option>
-          <option value="monthly">Média mensal</option>
-        </select>
-      </label>
-      <div class="control-group grow">
-        <span class="label">Candidatos exibidos</span>
-        <div id="candidateFilters" class="filters" aria-label="Filtros de candidatos"></div>
-      </div>
-    </section>
-
-    <section class="panel chart-panel">
-      <div class="chart-heading">
-        <div>
-          <h2>Evolução da intenção de voto</h2>
-          <p>Toque em um ponto ou na foto para abrir os detalhes.</p>
-        </div>
-        <div class="scale-note">Escala: 0% a 50%</div>
-      </div>
-      <div class="chart-wrap" id="chartWrap">
-        <svg id="timelineChart" role="img" aria-label="Gráfico de linhas das pesquisas presidenciais de 2026"></svg>
-      </div>
-      <div class="chart-legend" id="chartLegend"></div>
-      <p class="chart-footnote">A ausência de um candidato em determinada pesquisa não foi transformada em 0%. As linhas ligam apenas os levantamentos em que o nome aparece.</p>
-    </section>
-
-    <section class="panel">
-      <div class="section-heading">
-        <h2>Resultados mais recentes</h2>
-        <p>Toque em um candidato para abrir o levantamento mais recente disponível.</p>
-      </div>
-      <div id="ranking" class="ranking"></div>
-    </section>
-
-    <section class="panel methodology">
-      <h2>Metodologia e cobertura</h2>
-      <p>O painel consulta automaticamente o arquivo oficial de pesquisas eleitorais de 2026 do Portal de Dados Abertos do TSE. Quando o arquivo oficial muda, o indicador acima informa que uma atualização foi detectada.</p>
-      <p>O TSE fornece os registros e metadados das pesquisas, mas os percentuais por candidato não são disponibilizados em uma tabela padronizada. Por isso, a inclusão de novos pontos no gráfico depende da publicação verificável dos resultados pelo instituto responsável.</p>
-      <p>A visualização mensal calcula uma média simples das pesquisas disponíveis no mês, somente entre os levantamentos nos quais cada candidato foi testado. Ela não é projeção eleitoral nem substitui um agregador estatístico ponderado.</p>
-      <details class="credits">
-        <summary>Créditos das fotografias</summary>
-        <p>As fotografias são carregadas por um proxy interno a partir de arquivos públicos da Wikimedia Commons. Os links de atribuição permanecem associados a cada candidato nos dados do projeto.</p>
-      </details>
-      <p class="updated">Monitoramento automático do TSE ativado em 28 de julho de 2026.</p>
-    </section>
-  </main>
-
-  <dialog id="detailDialog" class="detail-dialog">
-    <div class="dialog-sheet">
-      <div class="detail-top">
-        <div class="candidate-identification">
-          <div id="detailPhoto"></div>
-          <div>
-            <h2 id="detailName"></h2>
-            <p id="detailParty"></p>
-          </div>
-        </div>
-        <button id="closeDetail" class="close-button" type="button" aria-label="Fechar detalhes">Fechar</button>
-      </div>
-      <div id="detailStats" class="detail-stats"></div>
-      <div id="detailMeta" class="detail-meta"></div>
-    </div>
-  </dialog>
-
-  <div id="tooltip" class="tooltip hidden" role="status"></div>
-  <script src="data.js"></script>
-  <script src="app.js"></script>
-  <script src="tse-live.js"></script>
+<div class="broadcast-strip"><div class="broadcast-strip-inner"><span class="broadcast-label">CENTRAL DE DADOS</span><span class="broadcast-status"><i></i>FONTES EM MONITORAMENTO</span><span class="broadcast-year">BRASIL 2026</span></div></div>
+<main class="container">
+<header class="hero">
+<div class="hero-copy"><span class="eyebrow">PESQUISAS · TENDÊNCIAS · COBERTURA LOCAL</span><h1>Brasil <em>2026</em></h1><p>Painel visual para acompanhar pesquisas nacionais e localizar levantamentos estaduais, municipais e por bairro em fontes verificáveis.</p></div>
+<div class="hero-actions"><a class="primary-link" href="#radar-local">Pesquisar cidade ou bairro</a><a class="secondary-link" href="https://pesqele-divulgacao.tse.jus.br/app/pesquisa/listar.xhtml" target="_blank" rel="noopener">Abrir PesqEle/TSE</a></div>
+</header>
+<section class="summary" id="summary" aria-label="Resumo dos dados"></section>
+<section id="tseLiveCard" class="tse-live checking" aria-live="polite"><span id="tseLiveDot" class="live-dot"></span><div class="tse-live-copy"><strong id="tseLiveTitle">Verificando a base oficial do TSE</strong><span id="tseLiveDetails">Consultando o arquivo atualizado de pesquisas eleitorais.</span></div><div class="tse-live-meta"><small id="tseLiveChecked">Conectando…</small><a id="tseLiveLink" href="https://dadosabertos.tse.jus.br/dataset/pesquisas-eleitorais-2026" target="_blank" rel="noopener">Dados oficiais</a></div></section>
+<section class="panel controls" aria-label="Controles do gráfico"><label class="control-group" for="viewMode"><span>Leitura do gráfico</span><select id="viewMode"><option value="polls">Cada pesquisa</option><option value="monthly">Média mensal</option></select></label><div class="control-group grow"><span class="label">Candidatos exibidos</span><div id="candidateFilters" class="filters"></div></div></section>
+<section class="panel chart-panel"><div class="panel-kicker">SÉRIE PRESIDENCIAL</div><div class="chart-heading"><div><h2>Trajetória da intenção de voto</h2><p>Toque em um ponto ou retrato para consultar os dados do levantamento.</p></div><div class="scale-note">ESCALA 0–50%</div></div><div class="chart-wrap" id="chartWrap"><svg id="timelineChart" role="img" aria-label="Gráfico de linhas das pesquisas presidenciais de 2026"></svg></div><div class="chart-legend" id="chartLegend"></div><p class="chart-footnote">A ausência de um nome em uma pesquisa não foi convertida em 0%.</p></section>
+<section class="panel latest-panel"><div class="panel-kicker">RESULTADOS MAIS RECENTES</div><div class="section-heading"><div><h2>Último levantamento disponível</h2><p>Abra cada linha para conferir instituto, data e metodologia.</p></div></div><div id="ranking" class="ranking"></div></section>
+<section id="radar-local" class="panel source-radar"><div class="panel-kicker">RADAR NACIONAL E LOCAL</div><div class="section-heading source-heading"><div><h2>Pesquisas de estados, cidades e bairros</h2><p>Consulta automática a páginas oficiais e fontes primárias dos institutos.</p></div><button id="sourceRefresh" class="refresh-button" type="button">Atualizar fontes</button></div><div class="source-controls"><label for="sourceSearch"><span>Local ou instituto</span><input id="sourceSearch" type="search" placeholder="Ex.: Itaboraí, Niterói, Curitiba, bairro…" autocomplete="off"></label><label for="sourceScope"><span>Abrangência</span><select id="sourceScope"><option value="Todas">Todas</option><option value="Nacional">Nacional</option><option value="Estadual">Estadual</option><option value="Municipal">Municipal</option><option value="Bairro">Bairro</option></select></label></div><div id="sourceStatus" class="source-status checking" aria-live="polite">Consultando fontes confiáveis…</div><div id="sourceDirectory" class="source-grid"></div><div id="sourceItems" class="source-results"></div></section>
+<section class="panel methodology"><div class="panel-kicker">TRANSPARÊNCIA</div><h2>Metodologia e critérios</h2><p>O painel monitora o TSE e páginas primárias de institutos. Nenhum percentual entra no gráfico sem conferência do cenário, amostra, período, margem e registro aplicável.</p><p>O detalhamento de município e bairro pode constar nos documentos do TSE. As páginas dos institutos complementam a localização e divulgação dos relatórios.</p><p>A média mensal é simples e não constitui previsão ou projeção eleitoral.</p><p class="updated">Estrutura revisada em 28 de julho de 2026.</p></section>
+<footer class="site-footer"><span>Desenvolvido por Pedro Santos</span><strong>® 2026</strong></footer>
+</main>
+<dialog id="detailDialog" class="detail-dialog"><div class="dialog-sheet"><div class="detail-top"><div class="candidate-identification"><div id="detailPhoto"></div><div><h2 id="detailName"></h2><p id="detailParty"></p></div></div><button id="closeDetail" class="close-button" type="button">Fechar</button></div><div id="detailStats" class="detail-stats"></div><div id="detailMeta" class="detail-meta"></div></div></dialog>
+<div id="tooltip" class="tooltip hidden" role="status"></div>
+<script src="data.js"></script><script src="app.js"></script><script src="tse-live.js"></script><script src="sources.js"></script>
 </body>
 </html>
