@@ -218,3 +218,29 @@
     bindInteractions();
   }
 })();
+
+(() => {
+  'use strict';
+
+  function loadCandidateDirectory() {
+    if (!document.querySelector('link[href="office-candidates.css"]')) {
+      const stylesheet = document.createElement('link');
+      stylesheet.rel = 'stylesheet';
+      stylesheet.href = 'office-candidates.css';
+      document.head.appendChild(stylesheet);
+    }
+
+    if (!document.querySelector('script[src="office-candidates.js"]')) {
+      const script = document.createElement('script');
+      script.src = 'office-candidates.js';
+      script.defer = true;
+      document.body.appendChild(script);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadCandidateDirectory, { once: true });
+  } else {
+    loadCandidateDirectory();
+  }
+})();
