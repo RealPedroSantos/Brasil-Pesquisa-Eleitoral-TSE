@@ -1,6 +1,9 @@
 {
   "cleanUrls": true,
   "trailingSlash": false,
+  "functions": {
+    "api/image.js": { "maxDuration": 10 }
+  },
   "headers": [
     {
       "source": "/(.*)",
