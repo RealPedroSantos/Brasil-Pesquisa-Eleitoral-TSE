@@ -1,0 +1,135 @@
+/* Correções de interação e remoção de efeitos luminosos */
+.modern-election-ui body {
+  background: linear-gradient(180deg, #050c16 0%, #02070d 100%) !important;
+}
+
+.modern-election-ui body::before {
+  opacity: .22 !important;
+}
+
+.modern-election-ui *,
+.modern-election-ui *::before,
+.modern-election-ui *::after {
+  text-shadow: none !important;
+}
+
+.modern-election-ui .presidential-panel::after {
+  display: none !important;
+}
+
+.modern-election-ui .panel,
+.modern-election-ui .broadcast-header,
+.modern-election-ui .election-story-nav,
+.modern-election-ui .detail-dialog {
+  box-shadow: 0 12px 30px rgba(0, 0, 0, .24) !important;
+}
+
+.modern-election-ui .brand-mark,
+.modern-election-ui .live-pill,
+.modern-election-ui .candidate-rank,
+.modern-election-ui .featured-portrait,
+.modern-election-ui .office-index,
+.modern-election-ui .office-live i,
+.modern-election-ui .office-bar > i,
+.modern-election-ui .office-photo i,
+.modern-election-ui .chart-focus-hud,
+.modern-election-ui .chart-focus-hud::before,
+.modern-election-ui .ux-chart-crosshair i {
+  box-shadow: none !important;
+}
+
+.modern-election-ui .candidate-card,
+.modern-election-ui .candidate-card:hover,
+.modern-election-ui .candidate-card.ux-focused,
+.modern-election-ui .candidate-card.ux-muted:hover,
+.modern-election-ui .office-profile,
+.modern-election-ui .office-profile:hover,
+.modern-election-ui .legend-item,
+.modern-election-ui .legend-item.ux-focused {
+  box-shadow: none !important;
+}
+
+.modern-election-ui .candidate-card.ux-focused {
+  transform: translateY(-5px) scale(1.018) !important;
+  border-color: var(--candidate-color) !important;
+}
+
+.modern-election-ui .candidate-card:hover {
+  transform: translateY(-4px) scale(1.01) !important;
+}
+
+.modern-election-ui .series-line,
+.modern-election-ui .series-line.ux-focused,
+.modern-election-ui .series-line.ux-muted,
+.modern-election-ui .point,
+.modern-election-ui .point.ux-focused,
+.modern-election-ui .point.ux-muted {
+  filter: none !important;
+}
+
+.modern-election-ui .series-line,
+.modern-election-ui .series-area,
+.modern-election-ui .point {
+  cursor: pointer;
+}
+
+.modern-election-ui .series-line {
+  pointer-events: stroke;
+}
+
+.modern-election-ui .series-area {
+  pointer-events: visiblePainted;
+}
+
+.modern-election-ui .series-line.ux-focused {
+  stroke-width: 4.5 !important;
+}
+
+.modern-election-ui .point.ux-focused {
+  stroke-width: 2 !important;
+}
+
+.modern-election-ui .chart-stage {
+  background: linear-gradient(180deg, #091827, #050f19) !important;
+}
+
+.modern-election-ui .chart-focus-hud {
+  background: rgba(4, 14, 24, .96) !important;
+  border-color: rgba(148, 174, 199, .34) !important;
+  animation: none !important;
+}
+
+.modern-election-ui .chart-focus-hud::before {
+  background: var(--focus-color) !important;
+}
+
+.modern-election-ui .interaction-hovering .chart-focus-hud {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.modern-election-ui .office-bar > i,
+.modern-election-ui .office-index,
+.modern-election-ui .office-tabs button.active,
+.modern-election-ui .nav-item.active,
+.modern-election-ui .chart-mode.active {
+  box-shadow: none !important;
+}
+
+.modern-election-ui .office-live i,
+.modern-election-ui .live-pill i,
+.modern-election-ui .data-badge i,
+.modern-election-ui .monitor-footer i {
+  animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modern-election-ui .candidate-card,
+  .modern-election-ui .series-line,
+  .modern-election-ui .series-area,
+  .modern-election-ui .point,
+  .modern-election-ui .chart-focus-hud {
+    transition: none !important;
+    animation: none !important;
+  }
+}
