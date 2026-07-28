@@ -1,0 +1,189 @@
+/* Cabeçalho: marca branca e contagem regressiva para o 1º turno */
+.modern-election-ui .brand strong,
+.modern-election-ui .brand strong em,
+.brand strong,
+.brand strong em {
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  background: none !important;
+  text-shadow: none !important;
+}
+
+.broadcast-header {
+  grid-template-columns: auto minmax(210px, 1fr) auto auto auto !important;
+}
+
+.election-countdown {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 5px 10px;
+  border: 1px solid rgba(154, 180, 204, .34);
+  background: #061321;
+  color: #fff;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.election-countdown-label,
+.election-countdown-date {
+  display: grid;
+  gap: 1px;
+}
+
+.election-countdown-label span,
+.election-countdown-date span {
+  color: #9fb4c9;
+  font: 700 8px/1.1 var(--font-display, "Barlow Condensed", sans-serif);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.election-countdown-label strong,
+.election-countdown-date strong {
+  color: #fff;
+  font: 800 12px/1 var(--font-display, "Barlow Condensed", sans-serif);
+  letter-spacing: .04em;
+}
+
+.election-countdown-units {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+}
+
+.election-countdown-unit {
+  display: grid;
+  min-width: 38px;
+  padding: 3px 5px;
+  border-left: 1px solid rgba(154, 180, 204, .25);
+  text-align: center;
+}
+
+.election-countdown-unit strong {
+  color: #fff;
+  font: 800 19px/.95 var(--font-display, "Barlow Condensed", sans-serif);
+}
+
+.election-countdown-unit small {
+  margin-top: 3px;
+  color: #9fb4c9;
+  font: 700 7px/1 var(--font-display, "Barlow Condensed", sans-serif);
+  letter-spacing: .08em;
+}
+
+.election-countdown.is-live,
+.election-countdown.is-finished {
+  min-width: 250px;
+  justify-content: center;
+}
+
+.election-countdown-status {
+  display: none;
+  color: #fff;
+  font: 800 14px/1 var(--font-display, "Barlow Condensed", sans-serif);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.election-countdown.is-live .election-countdown-units,
+.election-countdown.is-live .election-countdown-label,
+.election-countdown.is-finished .election-countdown-units,
+.election-countdown.is-finished .election-countdown-label {
+  display: none;
+}
+
+.election-countdown.is-live .election-countdown-status,
+.election-countdown.is-finished .election-countdown-status {
+  display: block;
+}
+
+@media (max-width: 1260px) {
+  .broadcast-header {
+    grid-template-columns: auto minmax(160px, 1fr) auto auto auto !important;
+    gap: 8px !important;
+  }
+
+  .election-countdown-date {
+    display: none;
+  }
+}
+
+@media (max-width: 1040px) {
+  .source-ticker {
+    display: none !important;
+  }
+
+  .broadcast-header {
+    grid-template-columns: minmax(0, 1fr) auto auto auto !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .live-clock {
+    display: none !important;
+  }
+
+  .broadcast-header {
+    grid-template-columns: minmax(0, 1fr) auto auto !important;
+    padding-inline: 8px !important;
+  }
+
+  .brand {
+    min-width: 0 !important;
+  }
+
+  .brand strong {
+    font-size: 18px !important;
+  }
+
+  .brand small,
+  .election-countdown-label {
+    display: none !important;
+  }
+
+  .election-countdown {
+    min-height: 42px;
+    padding: 4px 6px;
+    gap: 4px;
+  }
+
+  .election-countdown-unit {
+    min-width: 31px;
+    padding-inline: 3px;
+  }
+
+  .election-countdown-unit strong {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 500px) {
+  .brand-mark {
+    display: none !important;
+  }
+
+  .brand strong {
+    font-size: 16px !important;
+    line-height: .95 !important;
+    white-space: normal;
+  }
+
+  .election-countdown-unit:last-child {
+    display: none;
+  }
+
+  .election-countdown-unit {
+    min-width: 29px;
+  }
+
+  .election-countdown.is-live,
+  .election-countdown.is-finished {
+    min-width: 150px;
+  }
+
+  .election-countdown-status {
+    font-size: 11px;
+  }
+}
