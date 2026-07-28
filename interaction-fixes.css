@@ -123,12 +123,41 @@
   animation: none !important;
 }
 
+/* O painel de detalhes só existe visualmente após clique direto em um ponto. */
+.modern-election-ui .candidate-detail-panel[hidden] {
+  display: none !important;
+}
+
+.modern-election-ui .dashboard-grid:not(.candidate-details-visible) > .presidential-panel {
+  grid-column: 1 / -1 !important;
+}
+
+.modern-election-ui .dashboard-grid.candidate-details-visible > .presidential-panel {
+  grid-column: auto !important;
+}
+
+.modern-election-ui .candidate-detail-panel.is-point-open {
+  animation: candidateDetailsIn .22s ease both;
+}
+
+@keyframes candidateDetailsIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .modern-election-ui .candidate-card,
   .modern-election-ui .series-line,
   .modern-election-ui .series-area,
   .modern-election-ui .point,
-  .modern-election-ui .chart-focus-hud {
+  .modern-election-ui .chart-focus-hud,
+  .modern-election-ui .candidate-detail-panel {
     transition: none !important;
     animation: none !important;
   }
