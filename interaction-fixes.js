@@ -260,77 +260,77 @@
 (() => {
   'use strict';
 
-  function loadCandidateDirectory() {
-    if (!document.querySelector('link[href="office-candidates.css"]')) {
-      const stylesheet = document.createElement('link');
-      stylesheet.rel = 'stylesheet';
-      stylesheet.href = 'office-candidates.css';
-      document.head.appendChild(stylesheet);
+  const EDGE_GAP = 10;
+  const CURSOR_GAP = 14;
+  let pointerX = 0;
+  let pointerY = 0;
+  let frame = 0;
+
+  const getTooltip = () => document.getElementById('chartTooltip');
+
+  function positionTooltip() {
+    frame = 0;
+    const tooltip = getTooltip();
+    if (!tooltip || tooltip.classList.contains('hidden')) return;
+
+    tooltip.style.position = 'fixed';
+    tooltip.style.maxWidth = `min(280px, calc(100vw - ${EDGE_GAP * 2}px))`;
+    tooltip.style.pointerEvents = 'none';
+
+    const rect = tooltip.getBoundingClientRect();
+    const viewportWidth = document.documentElement.clientWidth;
+    const viewportHeight = document.documentElement.clientHeight;
+
+    let left = pointerX + CURSOR_GAP;
+    let top = pointerY + CURSOR_GAP;
+
+    if (left + rect.width > viewportWidth - EDGE_GAP) {
+      left = pointerX - rect.width - CURSOR_GAP;
     }
 
-    if (!document.querySelector('script[src="office-candidates.js"]')) {
-      const script = document.createElement('script');
-      script.src = 'office-candidates.js';
-      script.defer = true;
-      document.body.appendChild(script);
+    if (top + rect.height > viewportHeight - EDGE_GAP) {
+      top = pointerY - rect.height - CURSOR_GAP;
     }
+
+    left = Math.max(EDGE_GAP, Math.min(left, viewportWidth - rect.width - EDGE_GAP));
+    top = Math.max(EDGE_GAP, Math.min(top, viewportHeight - rect.height - EDGE_GAP));
+
+    tooltip.style.left = `${Math.round(left)}px`;
+    tooltip.style.top = `${Math.round(top)}px`;
+  }
+
+  function schedulePosition() {
+    if (frame) cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(positionTooltip);
+  }
+
+  function trackPointer(event) {
+    pointerX = event.clientX;
+    pointerY = event.clientY;
+    if (event.target.closest?.('#mainChart .point')) schedulePosition();
+  }
+
+  function bindTooltipPosition() {
+    const tooltip = getTooltip();
+    if (!tooltip || tooltip.dataset.viewportPositionBound === 'true') return;
+    tooltip.dataset.viewportPositionBound = 'true';
+
+    document.addEventListener('mousemove', trackPointer, { passive: true });
+    document.addEventListener('pointermove', trackPointer, { passive: true });
+    window.addEventListener('resize', schedulePosition, { passive: true });
+
+    const observer = new MutationObserver(schedulePosition);
+    observer.observe(tooltip, {
+      attributes: true,
+      attributeFilter: ['class'],
+      childList: true,
+      subtree: true
+    });
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', loadCandidateDirectory, { once: true });
+    document.addEventListener('DOMContentLoaded', bindTooltipPosition, { once: true });
   } else {
-    loadCandidateDirectory();
-  }
-})();
-
-(() => {
-  'use strict';
-
-  function loadElectionCountdown() {
-    if (!document.querySelector('link[href="header-countdown.css"]')) {
-      const stylesheet = document.createElement('link');
-      stylesheet.rel = 'stylesheet';
-      stylesheet.href = 'header-countdown.css';
-      document.head.appendChild(stylesheet);
-    }
-
-    if (!document.querySelector('script[src="header-countdown.js"]')) {
-      const script = document.createElement('script');
-      script.src = 'header-countdown.js';
-      script.defer = true;
-      document.body.appendChild(script);
-    }
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', loadElectionCountdown, { once: true });
-  } else {
-    loadElectionCountdown();
-  }
-})();
-
-(() => {
-  'use strict';
-
-  function loadAmericanElectionEditorial() {
-    if (!document.querySelector('link[href="american-election-editorial.css"]')) {
-      const stylesheet = document.createElement('link');
-      stylesheet.rel = 'stylesheet';
-      stylesheet.href = 'american-election-editorial.css';
-      document.head.appendChild(stylesheet);
-    }
-
-    if (!document.querySelector('script[src="american-election-editorial.js"]')) {
-      const script = document.createElement('script');
-      script.src = 'american-election-editorial.js';
-      script.defer = true;
-      document.body.appendChild(script);
-    }
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', loadAmericanElectionEditorial, { once: true });
-  } else {
-    loadAmericanElectionEditorial();
+    bindTooltipPosition();
   }
 })();
