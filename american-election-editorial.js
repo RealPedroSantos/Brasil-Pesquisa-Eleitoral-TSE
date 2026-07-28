@@ -137,3 +137,57 @@
     loadAuditSystem();
   }
 })();
+
+(() => {
+  'use strict';
+
+  const TOOLTIP_GAP = 12;
+  const VIEWPORT_PADDING = 8;
+
+  function positionChartTooltip(clientX, clientY) {
+    const tooltip = document.getElementById('chartTooltip');
+    if (!tooltip || tooltip.classList.contains('hidden')) return;
+
+    tooltip.style.position = 'fixed';
+    tooltip.style.transform = 'none';
+    tooltip.style.margin = '0';
+    tooltip.style.maxWidth = `${Math.max(180, Math.min(280, window.innerWidth - VIEWPORT_PADDING * 2))}px`;
+
+    const rect = tooltip.getBoundingClientRect();
+    let left = clientX + TOOLTIP_GAP;
+    let top = clientY + TOOLTIP_GAP;
+
+    if (left + rect.width > window.innerWidth - VIEWPORT_PADDING) {
+      left = clientX - rect.width - TOOLTIP_GAP;
+    }
+
+    if (top + rect.height > window.innerHeight - VIEWPORT_PADDING) {
+      top = clientY - rect.height - TOOLTIP_GAP;
+    }
+
+    left = Math.max(VIEWPORT_PADDING, Math.min(left, window.innerWidth - rect.width - VIEWPORT_PADDING));
+    top = Math.max(VIEWPORT_PADDING, Math.min(top, window.innerHeight - rect.height - VIEWPORT_PADDING));
+
+    tooltip.style.left = `${Math.round(left)}px`;
+    tooltip.style.top = `${Math.round(top)}px`;
+  }
+
+  function isChartPoint(target) {
+    return Boolean(target?.closest?.('#mainChart .point'));
+  }
+
+  document.addEventListener('mousemove', (event) => {
+    if (!isChartPoint(event.target)) return;
+    positionChartTooltip(event.clientX, event.clientY);
+  });
+
+  document.addEventListener('mouseover', (event) => {
+    if (!isChartPoint(event.target)) return;
+    const { clientX, clientY } = event;
+    requestAnimationFrame(() => positionChartTooltip(clientX, clientY));
+  });
+
+  window.addEventListener('resize', () => {
+    document.getElementById('chartTooltip')?.classList.add('hidden');
+  });
+})();
