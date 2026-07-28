@@ -1,11 +1,11 @@
 const SOURCES = {
-  lula: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/17.06.2025%20-%20Foto%20Oficial%20(54596867483).jpg?width=640',
-  flavio: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Fl%C3%A1vio%20Bolsonaro%2004%202026.jpg?width=640',
-  renan: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Renan%20Santos.jpg?width=640',
-  caiado: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Foto%20oficial%20de%20Ronaldo%20Caiado.jpg?width=640',
-  zema: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Romeu%20Zema%202025%20(cropped).jpg?width=640',
-  cury: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Augusto%20Cury.jpg?width=640',
-  daciolo: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Cabo%20Daciolo%20em%202022.jpg?width=640'
+  lula: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b3/17.06.2025_-_Foto_Oficial.jpg/960px-17.06.2025_-_Foto_Oficial.jpg',
+  flavio: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/Fl%C3%A1vio_Bolsonaro_04_2026.jpg/500px-Fl%C3%A1vio_Bolsonaro_04_2026.jpg',
+  renan: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Renan_Santos.jpg/500px-Renan_Santos.jpg',
+  caiado: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Foto_oficial_de_Ronaldo_Caiado.jpg/250px-Foto_oficial_de_Ronaldo_Caiado.jpg',
+  zema: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cc/Romeu_Zema_2025_%28cropped%29.jpg/500px-Romeu_Zema_2025_%28cropped%29.jpg',
+  cury: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/af/Augusto_Cury.jpg/500px-Augusto_Cury.jpg',
+  daciolo: 'https://upload.wikimedia.org/wikipedia/commons/9/95/Cabo_Daciolo_em_2022.jpg'
 };
 
 const INITIALS = { lula:'LU', flavio:'FB', renan:'RS', caiado:'RC', zema:'RZ', cury:'AC', daciolo:'CD' };
@@ -25,10 +25,13 @@ module.exports = async function handler(req, res) {
     return res.end(fallbackSvg(id));
   }
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 7000);
+
   try {
     const upstream = await fetch(source, {
-      redirect: 'follow',
-      headers: { 'User-Agent': 'Brasil-Pesquisa-Eleitoral-TSE/1.0 (public visualization)' }
+      signal: controller.signal,
+      headers: { 'User-Agent': 'Brasil-Pesquisa-Eleitoral-TSE/1.0' }
     });
     if (!upstream.ok) throw new Error(`upstream ${upstream.status}`);
 
@@ -44,5 +47,7 @@ module.exports = async function handler(req, res) {
     res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
     res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=3600');
     return res.end(fallbackSvg(id));
+  } finally {
+    clearTimeout(timeout);
   }
 };
