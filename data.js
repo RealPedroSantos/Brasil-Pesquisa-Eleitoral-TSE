@@ -1,6 +1,6 @@
 window.ELECTION_DATA = {
   candidates: [
-    { id:'lula', name:'Lula', party:'PT', color:'#20d040', photo:'/api/image?id=lula&v=5', focus:'50% 22%' },
+    { id:'lula', name:'Lula', party:'PT', color:'#20d040', photo:'/api/image?id=lula&v=6', focus:'42% 32%' },
     { id:'flavio', name:'Flávio Bolsonaro', party:'PL', color:'#ffd21c', photo:'/api/image?id=flavio&v=3', focus:'50% 12%' },
     { id:'renan', name:'Renan Santos', party:'Missão', color:'#1594ff', photo:'/api/image?id=renan&v=3', focus:'50% 10%' },
     { id:'caiado', name:'Ronaldo Caiado', party:'PSD', color:'#ff7a18', photo:'/api/image?id=caiado&v=3', focus:'50% 12%' },
