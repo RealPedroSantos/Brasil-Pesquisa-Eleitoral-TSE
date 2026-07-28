@@ -91,3 +91,110 @@
     init();
   }
 })();
+
+(() => {
+  'use strict';
+
+  const TARGET_BACKGROUND = /^rgba\(\s*2\s*,\s*10\s*,\s*18\s*,\s*(?:0?\.5|50%)\s*\)$/i;
+  const REMOVE_SELECTOR = '#electionStoryNav, .election-story-nav, article.sources-panel';
+
+  function removeRequestedElements(root = document) {
+    if (root.nodeType === Node.ELEMENT_NODE && root.matches?.(REMOVE_SELECTOR)) {
+      root.remove();
+      return;
+    }
+    root.querySelectorAll?.(REMOVE_SELECTOR).forEach((element) => element.remove());
+  }
+
+  function makeTargetBackgroundTransparent(root = document) {
+    const elements = [];
+    if (root.nodeType === Node.ELEMENT_NODE) elements.push(root);
+    root.querySelectorAll?.('*').forEach((element) => elements.push(element));
+
+    elements.forEach((element) => {
+      if (!element.isConnected) return;
+      const backgroundColor = getComputedStyle(element).backgroundColor;
+      if (TARGET_BACKGROUND.test(backgroundColor)) {
+        element.style.setProperty('background', 'transparent', 'important');
+      }
+    });
+  }
+
+  function protectSourceRendering() {
+    const app = window.ElectionApp;
+    const originalRenderSources = app?.renderSources;
+    if (!app || typeof originalRenderSources !== 'function' || originalRenderSources.__cleanupWrapped) return;
+
+    const wrappedRenderSources = function (...args) {
+      let temporarySourcesList = document.getElementById('sourcesList');
+      const createdTemporaryList = !temporarySourcesList;
+
+      if (createdTemporaryList) {
+        temporarySourcesList = document.createElement('div');
+        temporarySourcesList.id = 'sourcesList';
+        temporarySourcesList.hidden = true;
+        document.body.appendChild(temporarySourcesList);
+      }
+
+      try {
+        return originalRenderSources.apply(this, args);
+      } finally {
+        if (createdTemporaryList) temporarySourcesList.remove();
+        removeRequestedElements();
+      }
+    };
+
+    wrappedRenderSources.__cleanupWrapped = true;
+    app.renderSources = wrappedRenderSources;
+  }
+
+  function applyRequestedCleanup(root = document) {
+    protectSourceRendering();
+    removeRequestedElements(root);
+    makeTargetBackgroundTransparent(root);
+  }
+
+  function initCleanup() {
+    applyRequestedCleanup();
+
+    const pendingRoots = new Set();
+    let scheduled = false;
+
+    const flush = () => {
+      scheduled = false;
+      const roots = pendingRoots.size ? Array.from(pendingRoots) : [document];
+      pendingRoots.clear();
+      roots.forEach((root) => applyRequestedCleanup(root));
+    };
+
+    const schedule = (root) => {
+      pendingRoots.add(root?.nodeType ? root : document);
+      if (scheduled) return;
+      scheduled = true;
+      requestAnimationFrame(flush);
+    };
+
+    new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'childList') {
+          mutation.addedNodes.forEach((node) => {
+            if (node.nodeType === Node.ELEMENT_NODE) schedule(node);
+          });
+        } else if (mutation.target?.nodeType === Node.ELEMENT_NODE) {
+          schedule(mutation.target);
+        }
+      });
+    }).observe(document.documentElement, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class', 'style']
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initCleanup, { once: true });
+  } else {
+    initCleanup();
+  }
+})();
