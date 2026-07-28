@@ -90,11 +90,23 @@
 (() => {
   'use strict';
 
+  function loadAuditSourceSync() {
+    if (document.querySelector('script[src="audit-source-sync.js"]')) return;
+    const script = document.createElement('script');
+    script.src = 'audit-source-sync.js';
+    script.defer = true;
+    document.body.appendChild(script);
+  }
+
   function loadAuditApp() {
-    if (document.querySelector('script[src="audit-system.js"]')) return;
+    if (document.querySelector('script[src="audit-system.js"]')) {
+      loadAuditSourceSync();
+      return;
+    }
     const script = document.createElement('script');
     script.src = 'audit-system.js';
     script.defer = true;
+    script.onload = loadAuditSourceSync;
     document.body.appendChild(script);
   }
 
