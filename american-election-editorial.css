@@ -1,0 +1,1014 @@
+/*
+ * Sistema visual editorial para eleições brasileiras.
+ * Referências de linguagem: AP, NBC Big Board, NYT, Reuters e FiveThirtyEight.
+ * Princípios: superfícies planas, hierarquia jornalística, regras finas e cor como dado.
+ */
+
+html.us-election-editorial,
+html.modern-election-ui {
+  color-scheme: light;
+  --bg: #f2f0ea;
+  --panel: #ffffff;
+  --panel2: #f6f7f7;
+  --line: #c8cdd1;
+  --text: #151a1f;
+  --muted: #5f6871;
+  --green: #006b3c;
+  --yellow: #ffdf00;
+  --blue: #002776;
+  --red: #a32128;
+  --shadow: none;
+  --editorial-paper: #f2f0ea;
+  --editorial-surface: #ffffff;
+  --editorial-ink: #151a1f;
+  --editorial-muted: #5f6871;
+  --editorial-rule: #c8cdd1;
+  --editorial-rule-dark: #8f979e;
+  --editorial-navy: #002776;
+  --editorial-green: #006b3c;
+  --editorial-yellow: #ffdf00;
+}
+
+html.us-election-editorial body,
+html.modern-election-ui body {
+  background: var(--editorial-paper) !important;
+  color: var(--editorial-ink) !important;
+}
+
+html.us-election-editorial body::before,
+html.modern-election-ui body::before,
+html.us-election-editorial .panel::before,
+html.modern-election-ui .panel::before,
+html.us-election-editorial .presidential-panel::after,
+html.modern-election-ui .presidential-panel::after {
+  display: none !important;
+}
+
+html.us-election-editorial *,
+html.us-election-editorial *::before,
+html.us-election-editorial *::after,
+html.modern-election-ui *,
+html.modern-election-ui *::before,
+html.modern-election-ui *::after {
+  text-shadow: none !important;
+}
+
+html.us-election-editorial .panel,
+html.us-election-editorial .candidate-card,
+html.us-election-editorial .chart-stage,
+html.us-election-editorial .source-ticker,
+html.us-election-editorial .filter-row,
+html.us-election-editorial .map-card,
+html.us-election-editorial .state-card,
+html.us-election-editorial .registry-card,
+html.us-election-editorial .source-directory-card,
+html.us-election-editorial .office-section,
+html.us-election-editorial .office-profile,
+html.us-election-editorial .candidate-race-card,
+html.us-election-editorial .candidate-poll-meta > *,
+html.us-election-editorial .candidate-directory-status,
+html.us-election-editorial .candidate-dialog-metrics > div,
+html.us-election-editorial .detail-dialog,
+html.us-election-editorial .dialog-content,
+html.modern-election-ui .panel,
+html.modern-election-ui .candidate-card,
+html.modern-election-ui .chart-stage,
+html.modern-election-ui .source-ticker,
+html.modern-election-ui .filter-row,
+html.modern-election-ui .map-card,
+html.modern-election-ui .state-card,
+html.modern-election-ui .registry-card,
+html.modern-election-ui .source-directory-card,
+html.modern-election-ui .office-section,
+html.modern-election-ui .office-profile,
+html.modern-election-ui .candidate-race-card,
+html.modern-election-ui .candidate-poll-meta > *,
+html.modern-election-ui .candidate-directory-status,
+html.modern-election-ui .candidate-dialog-metrics > div,
+html.modern-election-ui .detail-dialog,
+html.modern-election-ui .dialog-content {
+  background-image: none !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+html.us-election-editorial button,
+html.us-election-editorial input,
+html.us-election-editorial select,
+html.us-election-editorial .panel,
+html.us-election-editorial .candidate-card,
+html.us-election-editorial .chart-stage,
+html.us-election-editorial .state-card,
+html.us-election-editorial .office-profile,
+html.us-election-editorial .candidate-race-card,
+html.us-election-editorial .candidate-poll-meta > *,
+html.us-election-editorial .dialog-content,
+html.modern-election-ui button,
+html.modern-election-ui input,
+html.modern-election-ui select,
+html.modern-election-ui .panel,
+html.modern-election-ui .candidate-card,
+html.modern-election-ui .chart-stage,
+html.modern-election-ui .state-card,
+html.modern-election-ui .office-profile,
+html.modern-election-ui .candidate-race-card,
+html.modern-election-ui .candidate-poll-meta > *,
+html.modern-election-ui .dialog-content {
+  border-radius: 2px !important;
+}
+
+/* Cabeçalho de redação */
+html.us-election-editorial .broadcast-header,
+html.modern-election-ui .broadcast-header {
+  height: 72px !important;
+  padding: 0 16px !important;
+  background: var(--editorial-navy) !important;
+  border: 0 !important;
+  border-bottom: 3px solid var(--editorial-yellow) !important;
+  box-shadow: none !important;
+}
+
+html.us-election-editorial .brand,
+html.modern-election-ui .brand {
+  color: #ffffff !important;
+}
+
+html.us-election-editorial .brand-mark,
+html.modern-election-ui .brand-mark {
+  width: 42px !important;
+  height: 32px !important;
+  transform: none !important;
+  background: var(--editorial-green) !important;
+  border: 1px solid rgba(255,255,255,.38) !important;
+  box-shadow: none !important;
+}
+
+html.us-election-editorial .brand strong,
+html.us-election-editorial .brand strong em,
+html.modern-election-ui .brand strong,
+html.modern-election-ui .brand strong em {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  font-family: Inter, Arial, sans-serif !important;
+  font-size: 19px !important;
+  letter-spacing: .015em !important;
+}
+
+html.us-election-editorial .brand small,
+html.modern-election-ui .brand small {
+  color: rgba(255,255,255,.72) !important;
+  font: 600 9px/1.2 Inter, Arial, sans-serif !important;
+  letter-spacing: .14em !important;
+}
+
+html.us-election-editorial .source-ticker,
+html.modern-election-ui .source-ticker {
+  height: 42px !important;
+  background: #0b367f !important;
+  border: 1px solid rgba(255,255,255,.22) !important;
+}
+
+html.us-election-editorial .ticker-label,
+html.us-election-editorial .ticker-source,
+html.modern-election-ui .ticker-label,
+html.modern-election-ui .ticker-source {
+  color: #ffffff !important;
+}
+
+html.us-election-editorial .ticker-source i,
+html.modern-election-ui .ticker-source i {
+  background: var(--editorial-yellow) !important;
+  box-shadow: none !important;
+}
+
+html.us-election-editorial .live-pill,
+html.modern-election-ui .live-pill {
+  background: #ffffff !important;
+  color: var(--editorial-navy) !important;
+  border: 1px solid #ffffff !important;
+  padding: 6px 9px !important;
+}
+
+html.us-election-editorial .live-pill i,
+html.modern-election-ui .live-pill i {
+  background: var(--editorial-green) !important;
+  animation: none !important;
+}
+
+html.us-election-editorial .live-clock strong,
+html.modern-election-ui .live-clock strong {
+  color: #ffffff !important;
+}
+
+html.us-election-editorial .election-countdown,
+html.modern-election-ui .election-countdown {
+  min-height: 42px !important;
+  background: #0b367f !important;
+  border: 1px solid rgba(255,255,255,.24) !important;
+  border-radius: 2px !important;
+  box-shadow: none !important;
+}
+
+html.us-election-editorial .election-countdown-unit,
+html.modern-election-ui .election-countdown-unit {
+  border-left-color: rgba(255,255,255,.24) !important;
+}
+
+/* Navegação */
+html.us-election-editorial .app-shell,
+html.modern-election-ui .app-shell {
+  grid-template-columns: 154px minmax(0, 1fr) !important;
+  min-height: calc(100vh - 72px) !important;
+}
+
+html.us-election-editorial .sidebar,
+html.modern-election-ui .sidebar {
+  top: 72px !important;
+  height: calc(100vh - 72px) !important;
+  background: #ffffff !important;
+  border-right: 1px solid var(--editorial-rule) !important;
+}
+
+html.us-election-editorial .nav-item,
+html.modern-election-ui .nav-item {
+  color: #343b42 !important;
+  border-left: 3px solid transparent !important;
+  background: #ffffff !important;
+  font-family: Inter, Arial, sans-serif !important;
+  font-size: 10px !important;
+  letter-spacing: .03em !important;
+}
+
+html.us-election-editorial .nav-item:hover,
+html.modern-election-ui .nav-item:hover {
+  background: #f0f2f3 !important;
+  color: #111820 !important;
+}
+
+html.us-election-editorial .nav-item.active,
+html.modern-election-ui .nav-item.active {
+  background: #eef3f0 !important;
+  border-left-color: var(--editorial-green) !important;
+  color: var(--editorial-green) !important;
+  box-shadow: none !important;
+}
+
+html.us-election-editorial .sidebar-brazil,
+html.modern-election-ui .sidebar-brazil {
+  display: none !important;
+}
+
+html.us-election-editorial .sidebar-owner,
+html.modern-election-ui .sidebar-owner {
+  color: #69727a !important;
+  border-top: 1px solid var(--editorial-rule) !important;
+}
+
+html.us-election-editorial .sidebar-owner strong,
+html.modern-election-ui .sidebar-owner strong {
+  color: #151a1f !important;
+}
+
+/* Superfícies e tipografia */
+html.us-election-editorial .workspace,
+html.modern-election-ui .workspace {
+  padding: 18px !important;
+  background: var(--editorial-paper) !important;
+}
+
+html.us-election-editorial .dashboard-grid,
+html.modern-election-ui .dashboard-grid {
+  gap: 14px !important;
+}
+
+html.us-election-editorial .panel,
+html.modern-election-ui .panel {
+  background: var(--editorial-surface) !important;
+  color: var(--editorial-ink) !important;
+  border: 1px solid var(--editorial-rule) !important;
+  border-top: 3px solid var(--editorial-navy) !important;
+  padding: 16px !important;
+}
+
+html.us-election-editorial .presidential-panel,
+html.modern-election-ui .presidential-panel {
+  border-top-color: var(--editorial-green) !important;
+}
+
+html.us-election-editorial .candidate-detail-panel,
+html.modern-election-ui .candidate-detail-panel {
+  border-top-color: var(--editorial-navy) !important;
+}
+
+html.us-election-editorial .panel-heading,
+html.modern-election-ui .panel-heading {
+  padding-bottom: 11px !important;
+  border-bottom: 1px solid var(--editorial-rule) !important;
+  margin-bottom: 13px !important;
+}
+
+html.us-election-editorial .panel h1,
+html.us-election-editorial .panel h2,
+html.us-election-editorial .view-header h1,
+html.us-election-editorial .candidate-dialog-hero h2,
+html.modern-election-ui .panel h1,
+html.modern-election-ui .panel h2,
+html.modern-election-ui .view-header h1,
+html.modern-election-ui .candidate-dialog-hero h2 {
+  color: var(--editorial-ink) !important;
+  font-family: Georgia, "Times New Roman", serif !important;
+  font-weight: 700 !important;
+  letter-spacing: -.025em !important;
+  line-height: 1.04 !important;
+  text-transform: none !important;
+}
+
+html.us-election-editorial .panel h1,
+html.modern-election-ui .panel h1 {
+  font-size: clamp(27px, 3vw, 38px) !important;
+}
+
+html.us-election-editorial .panel h2,
+html.modern-election-ui .panel h2 {
+  font-size: clamp(22px, 2.3vw, 31px) !important;
+}
+
+html.us-election-editorial .view-header,
+html.modern-election-ui .view-header {
+  margin: 0 0 14px !important;
+  padding: 18px 20px !important;
+  background: #ffffff !important;
+  border: 1px solid var(--editorial-rule) !important;
+  border-top: 4px solid var(--editorial-green) !important;
+}
+
+html.us-election-editorial .panel-kicker,
+html.us-election-editorial .view-header > span,
+html.modern-election-ui .panel-kicker,
+html.modern-election-ui .view-header > span {
+  color: var(--editorial-green) !important;
+  font: 700 10px/1.2 Inter, Arial, sans-serif !important;
+  letter-spacing: .14em !important;
+}
+
+html.us-election-editorial .panel-heading p,
+html.us-election-editorial .view-header p,
+html.us-election-editorial .disclaimer,
+html.modern-election-ui .panel-heading p,
+html.modern-election-ui .view-header p,
+html.modern-election-ui .disclaimer {
+  color: var(--editorial-muted) !important;
+}
+
+html.us-election-editorial .data-badge,
+html.modern-election-ui .data-badge {
+  color: #394149 !important;
+}
+
+html.us-election-editorial .data-badge i,
+html.modern-election-ui .data-badge i {
+  background: var(--editorial-green) !important;
+  box-shadow: none !important;
+  animation: none !important;
+}
+
+/* Cartões de candidatos */
+html.us-election-editorial .candidate-cards,
+html.modern-election-ui .candidate-cards {
+  gap: 8px !important;
+  margin-bottom: 15px !important;
+}
+
+html.us-election-editorial .candidate-card,
+html.modern-election-ui .candidate-card {
+  height: 174px !important;
+  background: #ffffff !important;
+  color: var(--editorial-ink) !important;
+  border: 1px solid var(--editorial-rule) !important;
+  border-top: 4px solid var(--candidate-color) !important;
+  transform: none !important;
+  transition: border-color .15s ease, background-color .15s ease !important;
+}
+
+html.us-election-editorial .candidate-card:hover,
+html.us-election-editorial .candidate-card.ux-focused,
+html.us-election-editorial .candidate-card.selected,
+html.modern-election-ui .candidate-card:hover,
+html.modern-election-ui .candidate-card.ux-focused,
+html.modern-election-ui .candidate-card.selected {
+  background: #f7f8f8 !important;
+  border-color: #7d858c !important;
+  border-top-color: var(--candidate-color) !important;
+  transform: none !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+html.us-election-editorial .candidate-card.ux-muted,
+html.modern-election-ui .candidate-card.ux-muted {
+  opacity: .4 !important;
+}
+
+html.us-election-editorial .candidate-rank,
+html.modern-election-ui .candidate-rank {
+  top: 7px !important;
+  left: 7px !important;
+  width: 25px !important;
+  height: 25px !important;
+  background: #ffffff !important;
+  color: var(--editorial-ink) !important;
+  border: 1px solid #646c73 !important;
+  font: 800 13px/1 Inter, Arial, sans-serif !important;
+  box-shadow: none !important;
+}
+
+html.us-election-editorial .candidate-photo-wrap,
+html.modern-election-ui .candidate-photo-wrap {
+  height: 92px !important;
+  background: #e7eaec !important;
+  border-bottom: 1px solid var(--editorial-rule) !important;
+}
+
+html.us-election-editorial .candidate-photo,
+html.modern-election-ui .candidate-photo {
+  height: 122% !important;
+  filter: none !important;
+}
+
+html.us-election-editorial .candidate-value,
+html.modern-election-ui .candidate-value {
+  color: var(--editorial-ink) !important;
+  font: 800 28px/.95 "Barlow Condensed", Inter, sans-serif !important;
+}
+
+html.us-election-editorial .candidate-name,
+html.modern-election-ui .candidate-name {
+  color: var(--editorial-ink) !important;
+  font-family: Inter, Arial, sans-serif !important;
+  font-size: 11px !important;
+}
+
+html.us-election-editorial .candidate-party,
+html.modern-election-ui .candidate-party {
+  color: var(--editorial-muted) !important;
+}
+
+/* Gráfico no padrão de redação */
+html.us-election-editorial .chart-toolbar,
+html.modern-election-ui .chart-toolbar {
+  align-items: center !important;
+  padding: 12px 0 0 !important;
+  border-top: 1px solid var(--editorial-rule) !important;
+}
+
+html.us-election-editorial .chart-toolbar strong,
+html.modern-election-ui .chart-toolbar strong {
+  color: var(--editorial-ink) !important;
+  font: 700 15px/1.2 Inter, Arial, sans-serif !important;
+  text-transform: none !important;
+}
+
+html.us-election-editorial .chart-toolbar span,
+html.modern-election-ui .chart-toolbar span {
+  color: var(--editorial-muted) !important;
+}
+
+html.us-election-editorial .editorial-chart-context,
+html.modern-election-ui .editorial-chart-context {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  margin-top: 5px !important;
+  color: var(--editorial-green) !important;
+  font: 700 9px/1.2 Inter, Arial, sans-serif !important;
+  letter-spacing: .08em !important;
+  text-transform: uppercase !important;
+}
+
+html.us-election-editorial .editorial-chart-context::before,
+html.modern-election-ui .editorial-chart-context::before {
+  content: "";
+  width: 20px;
+  height: 2px;
+  background: var(--editorial-yellow);
+}
+
+html.us-election-editorial .chart-modes,
+html.modern-election-ui .chart-modes {
+  border: 1px solid var(--editorial-rule-dark) !important;
+  border-radius: 2px !important;
+}
+
+html.us-election-editorial .chart-mode,
+html.modern-election-ui .chart-mode {
+  background: #ffffff !important;
+  color: #333b42 !important;
+  border-right: 1px solid var(--editorial-rule) !important;
+  box-shadow: none !important;
+}
+
+html.us-election-editorial .chart-mode.active,
+html.modern-election-ui .chart-mode.active {
+  background: var(--editorial-green) !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+}
+
+html.us-election-editorial .chart-stage,
+html.modern-election-ui .chart-stage {
+  height: 250px !important;
+  margin-top: 9px !important;
+  background: #ffffff !important;
+  border: 1px solid var(--editorial-rule) !important;
+}
+
+html.us-election-editorial .grid-line,
+html.modern-election-ui .grid-line {
+  stroke: #d9dde0 !important;
+  stroke-width: 1 !important;
+}
+
+html.us-election-editorial .axis-label,
+html.modern-election-ui .axis-label {
+  fill: #626b73 !important;
+  font: 9px Inter, Arial, sans-serif !important;
+}
+
+html.us-election-editorial .series-line,
+html.modern-election-ui .series-line {
+  stroke-width: 2.4 !important;
+  filter: none !important;
+}
+
+html.us-election-editorial .series-line.ux-focused,
+html.modern-election-ui .series-line.ux-focused {
+  stroke-width: 3.8 !important;
+}
+
+html.us-election-editorial .series-line.ux-muted,
+html.modern-election-ui .series-line.ux-muted {
+  opacity: .16 !important;
+}
+
+html.us-election-editorial .series-area,
+html.modern-election-ui .series-area {
+  opacity: .045 !important;
+  filter: none !important;
+}
+
+html.us-election-editorial .point.editorial-point,
+html.modern-election-ui .point.editorial-point {
+  fill: #ffffff !important;
+  stroke: var(--series-color) !important;
+  stroke-width: 2.2 !important;
+  filter: none !important;
+  animation: none !important;
+}
+
+html.us-election-editorial .point.editorial-point.ux-focused,
+html.modern-election-ui .point.editorial-point.ux-focused {
+  fill: var(--series-color) !important;
+  stroke: #ffffff !important;
+  stroke-width: 2.5 !important;
+}
+
+html.us-election-editorial .point.editorial-point.ux-muted,
+html.modern-election-ui .point.editorial-point.ux-muted {
+  opacity: .16 !important;
+}
+
+html.us-election-editorial .chart-legend,
+html.modern-election-ui .chart-legend {
+  gap: 6px 16px !important;
+  padding-top: 9px !important;
+  border-top: 1px solid var(--editorial-rule) !important;
+}
+
+html.us-election-editorial .legend-item,
+html.modern-election-ui .legend-item {
+  color: #31383f !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  font-family: Inter, Arial, sans-serif !important;
+  font-size: 9px !important;
+  box-shadow: none !important;
+}
+
+html.us-election-editorial .legend-item i,
+html.modern-election-ui .legend-item i {
+  height: 2px !important;
+  width: 18px !important;
+}
+
+html.us-election-editorial .chart-tooltip,
+html.modern-election-ui .chart-tooltip {
+  background: #ffffff !important;
+  color: var(--editorial-ink) !important;
+  border: 1px solid var(--editorial-navy) !important;
+  border-radius: 2px !important;
+  box-shadow: none !important;
+}
+
+html.us-election-editorial .chart-tooltip span,
+html.modern-election-ui .chart-tooltip span {
+  color: var(--editorial-muted) !important;
+}
+
+html.us-election-editorial .chart-focus-hud,
+html.modern-election-ui .chart-focus-hud {
+  background: #ffffff !important;
+  color: var(--editorial-ink) !important;
+  border: 1px solid var(--editorial-rule-dark) !important;
+  border-radius: 2px !important;
+  box-shadow: none !important;
+}
+
+/* Tabelas, filtros e botões */
+html.us-election-editorial .filter-row,
+html.modern-election-ui .filter-row {
+  background: #f5f6f6 !important;
+  border: 1px solid var(--editorial-rule) !important;
+  padding: 10px !important;
+}
+
+html.us-election-editorial input,
+html.us-election-editorial select,
+html.modern-election-ui input,
+html.modern-election-ui select {
+  background: #ffffff !important;
+  color: var(--editorial-ink) !important;
+  border: 1px solid #aeb5ba !important;
+  box-shadow: none !important;
+}
+
+html.us-election-editorial input:focus,
+html.us-election-editorial select:focus,
+html.modern-election-ui input:focus,
+html.modern-election-ui select:focus {
+  outline: 2px solid rgba(0,39,118,.2) !important;
+  outline-offset: 1px !important;
+}
+
+html.us-election-editorial .compact-table,
+html.us-election-editorial .data-table,
+html.modern-election-ui .compact-table,
+html.modern-election-ui .data-table {
+  background: #ffffff !important;
+  color: var(--editorial-ink) !important;
+}
+
+html.us-election-editorial .compact-table th,
+html.us-election-editorial .data-table th,
+html.modern-election-ui .compact-table th,
+html.modern-election-ui .data-table th {
+  background: #eceff1 !important;
+  color: #31383f !important;
+  border-bottom: 1px solid #9fa7ad !important;
+  font-family: Inter, Arial, sans-serif !important;
+}
+
+html.us-election-editorial .compact-table td,
+html.us-election-editorial .data-table td,
+html.modern-election-ui .compact-table td,
+html.modern-election-ui .data-table td {
+  color: #252c32 !important;
+  border-bottom: 1px solid #d8dcdf !important;
+}
+
+html.us-election-editorial .compact-table tbody tr:hover,
+html.us-election-editorial .data-table tbody tr:hover,
+html.modern-election-ui .compact-table tbody tr:hover,
+html.modern-election-ui .data-table tbody tr:hover {
+  background: #f5f6f2 !important;
+}
+
+html.us-election-editorial .wide-action,
+html.us-election-editorial .action-button,
+html.us-election-editorial .simulation-button,
+html.us-election-editorial .table-action,
+html.us-election-editorial .candidate-load-more,
+html.us-election-editorial .candidate-directory-controls button,
+html.modern-election-ui .wide-action,
+html.modern-election-ui .action-button,
+html.modern-election-ui .simulation-button,
+html.modern-election-ui .table-action,
+html.modern-election-ui .candidate-load-more,
+html.modern-election-ui .candidate-directory-controls button {
+  background: var(--editorial-navy) !important;
+  color: #ffffff !important;
+  border: 1px solid var(--editorial-navy) !important;
+  border-radius: 2px !important;
+  box-shadow: none !important;
+}
+
+html.us-election-editorial .action-button,
+html.modern-election-ui .action-button {
+  background: var(--editorial-green) !important;
+  border-color: var(--editorial-green) !important;
+}
+
+html.us-election-editorial .status-chip,
+html.modern-election-ui .status-chip {
+  background: #ffffff !important;
+  color: #374049 !important;
+  border: 1px solid #8f979e !important;
+  border-radius: 1px !important;
+}
+
+html.us-election-editorial .status-chip.result,
+html.modern-election-ui .status-chip.result {
+  color: var(--editorial-green) !important;
+  border-color: var(--editorial-green) !important;
+}
+
+/* Mapas, estados e assentos */
+html.us-election-editorial .map-card,
+html.modern-election-ui .map-card {
+  background: #ffffff !important;
+  border: 1px solid var(--editorial-rule) !important;
+}
+
+html.us-election-editorial .brazil-map #mapShape,
+html.modern-election-ui .brazil-map #mapShape {
+  fill: #e8ebed !important;
+  stroke: var(--editorial-navy) !important;
+  stroke-width: 1.4 !important;
+  filter: none !important;
+  animation: none !important;
+  stroke-dasharray: none !important;
+  stroke-dashoffset: 0 !important;
+}
+
+html.us-election-editorial .state-card,
+html.us-election-editorial .registry-card,
+html.us-election-editorial .source-directory-card,
+html.modern-election-ui .state-card,
+html.modern-election-ui .registry-card,
+html.modern-election-ui .source-directory-card {
+  background: #ffffff !important;
+  color: var(--editorial-ink) !important;
+  border: 1px solid var(--editorial-rule) !important;
+  border-top: 3px solid var(--editorial-navy) !important;
+}
+
+html.us-election-editorial .state-card:hover,
+html.modern-election-ui .state-card:hover {
+  background: #f5f7f6 !important;
+  border-color: #80888f !important;
+  border-top-color: var(--editorial-green) !important;
+  transform: none !important;
+}
+
+html.us-election-editorial .hemicycle,
+html.modern-election-ui .hemicycle {
+  background: #ffffff !important;
+  border: 1px solid var(--editorial-rule) !important;
+}
+
+html.us-election-editorial .seat,
+html.modern-election-ui .seat {
+  filter: none !important;
+  animation: none !important;
+}
+
+/* Candidatos de governador, Senado e deputados */
+html.us-election-editorial .office-section,
+html.modern-election-ui .office-section {
+  background: #ffffff !important;
+  color: var(--editorial-ink) !important;
+  border: 1px solid var(--editorial-rule) !important;
+  border-top: 3px solid var(--editorial-green) !important;
+}
+
+html.us-election-editorial .office-profile,
+html.modern-election-ui .office-profile {
+  background: #ffffff !important;
+  color: var(--editorial-ink) !important;
+  border: 1px solid var(--editorial-rule) !important;
+  transform: none !important;
+}
+
+html.us-election-editorial .office-profile:hover,
+html.modern-election-ui .office-profile:hover {
+  background: #f6f7f7 !important;
+  border-color: #7f878e !important;
+  transform: none !important;
+}
+
+html.us-election-editorial .candidate-directory-controls label span,
+html.us-election-editorial .candidate-poll-meta b,
+html.us-election-editorial .candidate-race-copy > small,
+html.us-election-editorial .candidate-no-result,
+html.us-election-editorial .candidate-directory-note,
+html.modern-election-ui .candidate-directory-controls label span,
+html.modern-election-ui .candidate-poll-meta b,
+html.modern-election-ui .candidate-race-copy > small,
+html.modern-election-ui .candidate-no-result,
+html.modern-election-ui .candidate-directory-note {
+  color: var(--editorial-muted) !important;
+}
+
+html.us-election-editorial .candidate-race-tabs,
+html.modern-election-ui .candidate-race-tabs {
+  gap: 0 !important;
+  border-bottom: 1px solid var(--editorial-rule) !important;
+}
+
+html.us-election-editorial .candidate-race-tabs button,
+html.modern-election-ui .candidate-race-tabs button {
+  background: #ffffff !important;
+  color: #46505a !important;
+  border: 1px solid var(--editorial-rule) !important;
+  border-bottom: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+html.us-election-editorial .candidate-race-tabs button.active,
+html.modern-election-ui .candidate-race-tabs button.active {
+  background: var(--editorial-navy) !important;
+  color: #ffffff !important;
+  border-color: var(--editorial-navy) !important;
+}
+
+html.us-election-editorial .candidate-poll-meta span,
+html.us-election-editorial .candidate-poll-meta a,
+html.modern-election-ui .candidate-poll-meta span,
+html.modern-election-ui .candidate-poll-meta a {
+  background: #f5f6f6 !important;
+  color: #31383f !important;
+  border: 1px solid var(--editorial-rule) !important;
+  border-radius: 2px !important;
+}
+
+html.us-election-editorial .candidate-race-card,
+html.modern-election-ui .candidate-race-card {
+  background: #ffffff !important;
+  color: var(--editorial-ink) !important;
+  border: 1px solid var(--editorial-rule) !important;
+  border-top: 3px solid var(--office-accent) !important;
+  border-radius: 2px !important;
+  transform: none !important;
+}
+
+html.us-election-editorial .candidate-race-card:hover,
+html.us-election-editorial .candidate-race-card:focus-visible,
+html.modern-election-ui .candidate-race-card:hover,
+html.modern-election-ui .candidate-race-card:focus-visible {
+  background: #f6f7f7 !important;
+  border-color: #7f878e !important;
+  border-top-color: var(--office-accent) !important;
+  transform: none !important;
+}
+
+html.us-election-editorial .candidate-race-photo,
+html.modern-election-ui .candidate-race-photo {
+  background: #e7eaec !important;
+  border-right: 1px solid var(--editorial-rule) !important;
+}
+
+html.us-election-editorial .candidate-race-photo::after,
+html.modern-election-ui .candidate-race-photo::after {
+  display: none !important;
+}
+
+html.us-election-editorial .candidate-race-photo img,
+html.modern-election-ui .candidate-race-photo img {
+  filter: none !important;
+}
+
+html.us-election-editorial .candidate-race-photo i,
+html.us-election-editorial .candidate-race-photo b,
+html.modern-election-ui .candidate-race-photo i,
+html.modern-election-ui .candidate-race-photo b {
+  border-radius: 1px !important;
+  box-shadow: none !important;
+}
+
+html.us-election-editorial .candidate-race-copy > strong,
+html.us-election-editorial .candidate-result-value,
+html.us-election-editorial .candidate-official-number,
+html.modern-election-ui .candidate-race-copy > strong,
+html.modern-election-ui .candidate-result-value,
+html.modern-election-ui .candidate-official-number {
+  color: var(--editorial-ink) !important;
+}
+
+html.us-election-editorial .candidate-result-bar,
+html.modern-election-ui .candidate-result-bar {
+  height: 4px !important;
+  background: #d9dde0 !important;
+  border-radius: 0 !important;
+}
+
+html.us-election-editorial .candidate-result-bar i,
+html.modern-election-ui .candidate-result-bar i {
+  border-radius: 0 !important;
+}
+
+html.us-election-editorial .candidate-directory-status,
+html.modern-election-ui .candidate-directory-status {
+  background: #f7f8f8 !important;
+  color: var(--editorial-ink) !important;
+  border: 1px dashed #9ba2a8 !important;
+  border-radius: 2px !important;
+}
+
+/* Diálogos */
+html.us-election-editorial .detail-dialog,
+html.modern-election-ui .detail-dialog {
+  background: rgba(15, 22, 28, .58) !important;
+}
+
+html.us-election-editorial .dialog-content,
+html.modern-election-ui .dialog-content {
+  background: #ffffff !important;
+  color: var(--editorial-ink) !important;
+  border: 1px solid #747d84 !important;
+  border-top: 4px solid var(--editorial-green) !important;
+}
+
+html.us-election-editorial .dialog-close,
+html.modern-election-ui .dialog-close {
+  background: #ffffff !important;
+  color: var(--editorial-ink) !important;
+  border: 1px solid var(--editorial-rule-dark) !important;
+  border-radius: 1px !important;
+}
+
+html.us-election-editorial .candidate-dialog-hero img,
+html.modern-election-ui .candidate-dialog-hero img {
+  border-radius: 2px !important;
+  border-color: var(--editorial-rule) !important;
+}
+
+html.us-election-editorial .candidate-dialog-metrics > div,
+html.modern-election-ui .candidate-dialog-metrics > div {
+  background: #f5f6f6 !important;
+  color: var(--editorial-ink) !important;
+  border: 1px solid var(--editorial-rule) !important;
+  border-radius: 2px !important;
+}
+
+html.us-election-editorial .site-footer,
+html.modern-election-ui .site-footer {
+  color: #656e76 !important;
+  border-top: 1px solid var(--editorial-rule) !important;
+}
+
+@media (max-width: 1040px) {
+  html.us-election-editorial .app-shell,
+  html.modern-election-ui .app-shell {
+    grid-template-columns: 1fr !important;
+  }
+
+  html.us-election-editorial .workspace,
+  html.modern-election-ui .workspace {
+    padding: 12px !important;
+  }
+}
+
+@media (max-width: 760px) {
+  html.us-election-editorial .broadcast-header,
+  html.modern-election-ui .broadcast-header {
+    height: 64px !important;
+    padding-inline: 9px !important;
+  }
+
+  html.us-election-editorial .brand strong,
+  html.modern-election-ui .brand strong {
+    font-size: 15px !important;
+  }
+
+  html.us-election-editorial .candidate-cards,
+  html.modern-election-ui .candidate-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  html.us-election-editorial .candidate-card,
+  html.modern-election-ui .candidate-card {
+    height: 165px !important;
+  }
+
+  html.us-election-editorial .chart-stage,
+  html.modern-election-ui .chart-stage {
+    height: 225px !important;
+  }
+
+  html.us-election-editorial .panel,
+  html.modern-election-ui .panel {
+    padding: 12px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.us-election-editorial *,
+  html.us-election-editorial *::before,
+  html.us-election-editorial *::after,
+  html.modern-election-ui *,
+  html.modern-election-ui *::before,
+  html.modern-election-ui *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
