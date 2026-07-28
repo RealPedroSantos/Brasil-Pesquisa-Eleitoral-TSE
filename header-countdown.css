@@ -99,6 +99,21 @@
   display: block;
 }
 
+/* Remoção real dos blocos e fundos solicitados. */
+#electionStoryNav,
+.election-story-nav,
+article.sources-panel {
+  display: none !important;
+}
+
+.office-controls,
+.office-chart-card,
+.office-profile-card {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
 @media (max-width: 1260px) {
   .broadcast-header {
     grid-template-columns: auto minmax(160px, 1fr) auto auto auto !important;
