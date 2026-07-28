@@ -42,35 +42,28 @@ module.exports = async function handler(req, res) {
       pithumbsize: '700',
       redirects: '1',
       format: 'json',
+      formatversion: '2',
       titles: title
     });
 
     const response = await fetch(`https://pt.wikipedia.org/w/api.php?${params.toString()}`, {
       headers: {
         Accept: 'application/json',
-        'User-Agent': 'Pesquisas-Eleitorais-2026/4.0 (painel informativo)'
+        'User-Agent': 'Pesquisas-Eleitorais-2026/4.1 (painel informativo)'
       },
-      cache: 'no-store'
+      cache: 'no-store',
+      signal: AbortSignal.timeout(6000)
     });
 
     if (!response.ok) return sendFallback(res, name);
 
     const data = await response.json();
-    const page = Object.values(data?.query?.pages || {})[0];
+    const page = data?.query?.pages?.[0];
     const source = page?.thumbnail?.source;
     if (!source) return sendFallback(res, name);
 
-    const imageResponse = await fetch(source, {
-      headers: { 'User-Agent': 'Pesquisas-Eleitorais-2026/4.0' },
-      cache: 'no-store'
-    });
-
-    if (!imageResponse.ok) return sendFallback(res, name);
-
-    const bytes = Buffer.from(await imageResponse.arrayBuffer());
-    res.setHeader('Content-Type', imageResponse.headers.get('content-type') || 'image/jpeg');
     res.setHeader('Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=604800');
-    return res.status(200).send(bytes);
+    return res.redirect(302, source);
   } catch {
     return sendFallback(res, name);
   }
