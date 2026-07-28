@@ -1,5 +1,5 @@
 const SOURCES = {
-  lula: 'https://upload.wikimedia.org/wikipedia/commons/3/3f/Foto_oficial_de_Luiz_In%C3%A1cio_Lula_da_Silva_%28rosto%29.jpg',
+  lula: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Foto_oficial_de_Luiz_In%C3%A1cio_Lula_da_Silva_%28rosto%29.jpg/500px-Foto_oficial_de_Luiz_In%C3%A1cio_Lula_da_Silva_%28rosto%29.jpg',
   flavio: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/Fl%C3%A1vio_Bolsonaro_04_2026.jpg/500px-Fl%C3%A1vio_Bolsonaro_04_2026.jpg',
   renan: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Renan_Santos.jpg/500px-Renan_Santos.jpg',
   caiado: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Foto_oficial_de_Ronaldo_Caiado.jpg/250px-Foto_oficial_de_Ronaldo_Caiado.jpg',
