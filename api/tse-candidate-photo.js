@@ -60,9 +60,10 @@ module.exports = async function handler(req, res) {
     const detailResponse = await fetch(detailUrl, {
       headers: {
         Accept: 'application/json',
-        'User-Agent': 'Pesquisas-Eleitorais-2026/4.0'
+        'User-Agent': 'Pesquisas-Eleitorais-2026/4.1'
       },
-      cache: 'no-store'
+      cache: 'no-store',
+      signal: AbortSignal.timeout(6000)
     });
 
     if (!detailResponse.ok) return sendFallback(res, name);
@@ -71,19 +72,8 @@ module.exports = async function handler(req, res) {
     const photoUrl = resolvePhotoUrl(data);
     if (!photoUrl) return sendFallback(res, name);
 
-    const photoResponse = await fetch(photoUrl, {
-      headers: { 'User-Agent': 'Pesquisas-Eleitorais-2026/4.0' },
-      cache: 'no-store'
-    });
-
-    if (!photoResponse.ok) return sendFallback(res, name);
-
-    const contentType = photoResponse.headers.get('content-type') || 'image/jpeg';
-    const bytes = Buffer.from(await photoResponse.arrayBuffer());
-
-    res.setHeader('Content-Type', contentType);
     res.setHeader('Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=604800');
-    return res.status(200).send(bytes);
+    return res.redirect(302, photoUrl);
   } catch {
     return sendFallback(res, name);
   }
