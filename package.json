@@ -1,9 +1,9 @@
 {
   "name": "brasil-pesquisa-eleitoral-tse",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "private": true,
   "scripts": {
-    "build": "npx @tailwindcss/cli -i ./src/input.css -o ./tailwind.css --minify"
+    "build": "rm -rf public && mkdir -p public/dashboard-parts && npx @tailwindcss/cli -i ./src/input.css -o ./public/tailwind.css --minify && cp index.html polls-data.js dashboard-loader.js public/ && cp dashboard-parts/*.txt public/dashboard-parts/"
   },
   "dependencies": {
     "adm-zip": "^0.5.16",
