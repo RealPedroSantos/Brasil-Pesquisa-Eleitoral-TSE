@@ -17,6 +17,7 @@ async function main() {
 
   const { window } = dom;
   window.scrollTo = () => {};
+  window.HTMLElement.prototype.scrollIntoView = () => {};
   window.matchMedia = () => ({ matches: false, addListener() {}, removeListener() {} });
   window.HTMLDialogElement.prototype.showModal = function showModal() { this.open = true; };
   window.HTMLDialogElement.prototype.close = function close() { this.open = false; };
@@ -39,7 +40,7 @@ async function main() {
 
   window.eval(dashboard);
   window.document.dispatchEvent(new window.Event('DOMContentLoaded', { bubbles: true }));
-  await new Promise((resolve) => window.setTimeout(resolve, 50));
+  await new Promise((resolve) => window.setTimeout(resolve, 80));
 
   const overview = window.document.getElementById('overview');
   const chart = overview?.querySelector('svg[aria-label="Gráfico de pesquisas eleitorais"]');
@@ -48,15 +49,45 @@ async function main() {
   if (chart.querySelectorAll('.chart-candidate-photo').length < 8) throw new Error('Fotos não foram colocadas nas linhas do gráfico.');
   if (overview.querySelectorAll('.candidate-photo-card img[data-candidate-photo]').length < 8) throw new Error('Seletor com fotos dos candidatos não renderizou.');
   if (overview.querySelectorAll('.chart-ranking-row img[data-candidate-photo]').length < 8) throw new Error('Ranking lateral com fotos não renderizou.');
+
+  const officeSections = overview.querySelectorAll('[data-overview-office]');
+  if (officeSections.length !== 5) throw new Error(`Visão geral contínua deveria mostrar 5 categorias, mas mostrou ${officeSections.length}.`);
+  ['governors', 'senate', 'chamber', 'assemblies', 'district'].forEach((id) => {
+    if (!overview.querySelector(`[data-overview-office="${id}"]`)) throw new Error(`Categoria ${id} ausente da visão geral.`);
+  });
+  if (overview.querySelectorAll('[data-overview-office] img[data-candidate-photo]').length < 30) throw new Error('Categorias inferiores não exibem fotos suficientes.');
+
+  const chamberSimulation = overview.querySelector('[data-seat-simulation="chamber"]');
+  const senateSimulation = overview.querySelector('[data-seat-simulation="senate"]');
+  if (!chamberSimulation || chamberSimulation.querySelectorAll('svg circle').length !== 513) throw new Error('Simulação da Câmara não contém exatamente 513 cadeiras.');
+  if (!senateSimulation || senateSimulation.querySelectorAll('svg circle').length !== 54) throw new Error('Simulação do Senado não contém exatamente 54 cadeiras em disputa.');
+  if (!overview.textContent.includes('Limite do modelo')) throw new Error('Avisos metodológicos das simulações não renderizaram.');
   if (window.document.getElementById('bootScreen')) throw new Error('Tela de carregamento não foi removida.');
 
   const secondRound = overview.querySelector('[data-round="2"]');
   secondRound?.click();
-  await new Promise((resolve) => window.setTimeout(resolve, 20));
+  await new Promise((resolve) => window.setTimeout(resolve, 30));
   if (!window.document.getElementById('overview')?.textContent.includes('Segundo turno')) throw new Error('Alternância para segundo turno falhou.');
+  if (window.document.querySelectorAll('#overview [data-overview-office]').length !== 5) throw new Error('Página contínua desapareceu após trocar o turno.');
 
   const matchup = window.document.getElementById('matchupFilter');
   if (!matchup || matchup.options.length < 4) throw new Error('Confrontos de segundo turno não foram carregados.');
+
+  const chamberNav = window.document.querySelector('[data-view="chamber"]');
+  chamberNav?.click();
+  await new Promise((resolve) => window.setTimeout(resolve, 30));
+  const chamber = window.document.getElementById('chamber');
+  if (!chamber?.querySelector('[data-seat-simulation="chamber"]')) throw new Error('Página completa da Câmara não exibe a simulação.');
+  if (chamber.querySelectorAll('[data-seat-simulation="chamber"] svg circle').length !== 513) throw new Error('Página completa da Câmara perdeu cadeiras.');
+  if (chamber.querySelectorAll('img[data-candidate-photo]').length < 6) throw new Error('Página da Câmara não exibe os perfis com fotos.');
+
+  const senateNav = window.document.querySelector('[data-view="senate"]');
+  senateNav?.click();
+  await new Promise((resolve) => window.setTimeout(resolve, 30));
+  const senate = window.document.getElementById('senate');
+  if (!senate?.querySelector('[data-seat-simulation="senate"]')) throw new Error('Página completa do Senado não exibe a simulação.');
+  if (senate.querySelectorAll('[data-seat-simulation="senate"] svg circle').length !== 54) throw new Error('Página completa do Senado perdeu cadeiras.');
+  if (senate.querySelectorAll('[data-office-poll] img[data-candidate-photo]').length < 6) throw new Error('Página do Senado não exibe candidatos com fotos.');
 
   const presidentNav = window.document.querySelector('[data-view="president"]');
   presidentNav?.click();
@@ -75,7 +106,7 @@ async function main() {
   if (errors.length) throw new Error(`Erros de execução: ${errors.map(String).join(' | ')}`);
 
   window.close();
-  process.stdout.write('Smoke test do painel, catálogo e fotos: OK\n');
+  process.stdout.write('Smoke test do painel, página contínua, cadeiras e fotos: OK\n');
 }
 
 main().catch((error) => {
