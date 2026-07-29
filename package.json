@@ -1,9 +1,9 @@
 {
   "name": "brasil-pesquisa-eleitoral-tse",
-  "version": "4.0.2",
+  "version": "4.0.3",
   "private": true,
   "scripts": {
-    "build": "rm -rf public && mkdir -p public && cat dashboard-parts/*.txt > public/dashboard.js && node --check public/dashboard.js && node --check polls-data.js && npx @tailwindcss/cli -i ./src/input.css -o ./public/tailwind.css --minify && cp index.html polls-data.js public/"
+    "build": "rm -rf public && mkdir -p public && cat dashboard-parts/*.txt > public/dashboard.js && node --check public/dashboard.js && node --check polls-data.js && npx @tailwindcss/cli -i ./src/input.css -o ./public/tailwind.css --minify && cp index.html polls-data.js public/ && node scripts/smoke-test.js"
   },
   "dependencies": {
     "adm-zip": "^0.5.16",
@@ -11,6 +11,7 @@
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.1.10",
+    "jsdom": "^26.1.0",
     "tailwindcss": "^4.1.10"
   }
 }
