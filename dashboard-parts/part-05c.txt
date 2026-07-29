@@ -1,0 +1,570 @@
+
+  const officeParityUi = {};
+  const officeAssemblySeats = { SP: 94, MG: 77, RJ: 70, PE: 49, RS: 55 };
+  extendedPartyColors['Sem projeção'] = '#cbd5e1';
+
+  function officeParitySlug(value) {
+    return String(value || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+
+  function officeParityDate(publication) {
+    const [day, month, year] = String(publication || '').split('/');
+    return year && month && day ? `${year}-${month}-${day}` : '2026-01-01';
+  }
+
+  function officeParityCandidateId(viewId, uf, name) {
+    return officeParitySlug(`${viewId}-${uf || 'BR'}-${name}`);
+  }
+
+  function officeParityObservations(viewId) {
+    const definition = extendedOfficeDefinitions[viewId];
+    if (!definition) return [];
+
+    return definition.polls.flatMap((poll) => {
+      const rounds = poll.rounds || {
+        first: [extendedScenario('Resultado publicado', poll.candidates || [])],
+        second: []
+      };
+
+      return ['first', 'second'].flatMap((round) => (rounds[round] || []).map((scenario, scenarioIndex) => {
+        const candidates = (scenario.candidates || []).map((person) => {
+          const enriched = extendedPerson({ ...person, uf: poll.uf });
+          return {
+            ...enriched,
+            id: officeParityCandidateId(viewId, poll.uf, enriched.name),
+            uf: poll.uf
+          };
+        });
+
+        return {
+          id: `${poll.id}-${round}-${scenarioIndex}`,
+          pollId: poll.id,
+          round,
+          scenarioIndex,
+          scenario: scenario.label || 'Resultado publicado',
+          uf: poll.uf || 'BR',
+          stateName: poll.stateName || poll.uf || 'Brasil',
+          institute: poll.institute,
+          publication: poll.publication,
+          date: officeParityDate(poll.publication),
+          field: poll.field,
+          sample: poll.sample,
+          margin: poll.margin,
+          registry: poll.registry,
+          source: poll.source,
+          undecided: Number(scenario.undecided || 0),
+          blank: Number(scenario.blank || 0),
+          candidates,
+          values: Object.fromEntries(candidates.map((candidate) => [candidate.id, Number(candidate.value)]))
+        };
+      }));
+    }).sort((a, b) => dateValue(a.date) - dateValue(b.date) || a.id.localeCompare(b.id));
+  }
+
+  function officeParityRoster(viewId, uf = null) {
+    const definition = extendedOfficeDefinitions[viewId];
+    if (!definition) return [];
+
+    const people = [];
+    officeParityObservations(viewId)
+      .filter((observation) => !uf || observation.uf === uf)
+      .forEach((observation) => people.push(...observation.candidates));
+
+    (definition.monitored || [])
+      .filter((person) => !uf || person.uf === uf)
+      .forEach((person) => {
+        const enriched = extendedPerson(person);
+        people.push({
+          ...enriched,
+          id: officeParityCandidateId(viewId, person.uf, enriched.name),
+          uf: person.uf
+        });
+      });
+
+    const uniquePeople = new Map();
+    people.forEach((person) => {
+      if (!uniquePeople.has(person.id)) uniquePeople.set(person.id, person);
+    });
+    return [...uniquePeople.values()].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+  }
+
+  function officeParityUfs(viewId) {
+    const definition = extendedOfficeDefinitions[viewId];
+    if (!definition) return [];
+    return unique([
+      ...definition.polls.map((poll) => poll.uf),
+      ...(definition.monitored || []).map((person) => person.uf)
+    ]).sort();
+  }
+
+  function officeParityState(viewId) {
+    const ufs = officeParityUfs(viewId);
+    if (!officeParityUi[viewId]) {
+      const uf = ufs[0] || 'BR';
+      officeParityUi[viewId] = {
+        uf,
+        round: 'first',
+        institute: 'all',
+        scenario: 'all',
+        selectedCandidates: new Set(officeParityRoster(viewId, uf).map((candidate) => candidate.id))
+      };
+    }
+
+    const ui = officeParityUi[viewId];
+    if (!ufs.includes(ui.uf) && ufs.length) ui.uf = ufs[0];
+    return ui;
+  }
+
+  function officeParityAvailableRounds(viewId, uf) {
+    const observations = officeParityObservations(viewId).filter((observation) => observation.uf === uf);
+    const rounds = unique(observations.map((observation) => observation.round));
+    return rounds.length ? rounds : ['first'];
+  }
+
+  function officeParityCurrentObservations(viewId) {
+    const ui = officeParityState(viewId);
+    return officeParityObservations(viewId)
+      .filter((observation) => observation.uf === ui.uf)
+      .filter((observation) => observation.round === ui.round)
+      .filter((observation) => ui.institute === 'all' || observation.institute === ui.institute)
+      .filter((observation) => ui.scenario === 'all' || observation.scenario === ui.scenario)
+      .sort((a, b) => dateValue(a.date) - dateValue(b.date) || a.id.localeCompare(b.id));
+  }
+
+  function officeParityRegistryRows(viewId, uf) {
+    const definition = extendedOfficeDefinitions[viewId];
+    return state.registry.filter((row) => {
+      const officeMatch = String(row.office || '').toLowerCase() === String(definition?.office || '').toLowerCase();
+      return officeMatch && (!uf || row.uf === uf);
+    });
+  }
+
+  function officeParityKpis(viewId) {
+    const ui = officeParityState(viewId);
+    const observations = officeParityObservations(viewId).filter((observation) => observation.uf === ui.uf);
+    const firstRound = observations.filter((observation) => observation.round === 'first').length;
+    const secondRound = observations.filter((observation) => observation.round === 'second').length;
+    const latest = observations.slice().sort((a, b) => dateValue(b.date) - dateValue(a.date))[0];
+    const official = officeParityRegistryRows(viewId, ui.uf).length;
+
+    return `<div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      ${kpiMarkup('Pesquisas de 1º turno', String(firstRound), `cenários publicados em ${ui.uf}`, 'emerald')}
+      ${kpiMarkup('Pesquisas de 2º turno', String(secondRound), secondRound ? 'confrontos publicados' : 'não se aplica ou não publicado', 'red')}
+      ${kpiMarkup('Registros oficiais TSE', state.registryLoading ? '…' : formatNumber(official), `cadastros de ${ui.uf}`, 'blue')}
+      ${kpiMarkup('Última publicação', latest?.publication || '—', latest?.institute || 'Sem resultado publicado', 'amber')}
+    </div>`;
+  }
+
+  function officeParityRosterMarkup(viewId) {
+    const ui = officeParityState(viewId);
+    const roster = officeParityRoster(viewId, ui.uf);
+    const observations = officeParityObservations(viewId).filter((observation) => observation.uf === ui.uf);
+
+    return `<article class="news-card">
+      <div class="news-card-heading"><div><span>Todos os nomes do catálogo</span><strong>Candidatos com foto</strong></div><small>${roster.length} perfis · ${escapeHtml(ui.uf)}</small></div>
+      <div class="candidate-roster-grid">${roster.map((candidate) => {
+        const firstRound = observations.filter((observation) => observation.round === 'first' && Object.hasOwn(observation.values, candidate.id)).length;
+        const secondRound = observations.filter((observation) => observation.round === 'second' && Object.hasOwn(observation.values, candidate.id)).length;
+        const status = firstRound || secondRound
+          ? `${firstRound} cenário(s) de 1º turno · ${secondRound} de 2º turno`
+          : 'Perfil público monitorado · sem percentual atribuído';
+        return `<article class="candidate-roster-card" style="--candidate-color:${candidate.color}">
+          ${candidatePhotoMarkup(candidate, 'lg')}
+          <div class="min-w-0"><strong>${escapeHtml(candidate.name)}</strong><small>${escapeHtml(candidate.party)} · ${escapeHtml(candidate.uf || ui.uf)}</small><span>${escapeHtml(status)}</span></div>
+        </article>`;
+      }).join('') || '<div class="bg-white p-6 text-sm text-slate-500">Nenhum perfil cadastrado para esta UF.</div>'}</div>
+    </article>`;
+  }
+
+  function officeParityExplorerMarkup(viewId) {
+    const ui = officeParityState(viewId);
+    const definition = extendedOfficeDefinitions[viewId];
+    const observations = officeParityCurrentObservations(viewId);
+    const allForUf = officeParityObservations(viewId).filter((observation) => observation.uf === ui.uf);
+    const rounds = officeParityAvailableRounds(viewId, ui.uf);
+    if (!rounds.includes(ui.round)) ui.round = rounds[0];
+    const institutes = unique(allForUf.filter((observation) => observation.round === ui.round).map((observation) => observation.institute)).sort();
+    const scenarios = unique(allForUf
+      .filter((observation) => observation.round === ui.round)
+      .filter((observation) => ui.institute === 'all' || observation.institute === ui.institute)
+      .map((observation) => observation.scenario));
+    const roster = officeParityRoster(viewId, ui.uf);
+    const visibleIds = new Set(observations.flatMap((observation) => Object.keys(observation.values)));
+    const candidates = roster.filter((candidate) => visibleIds.has(candidate.id) || !observations.length);
+
+    return `<article class="news-card" data-office-parity-explorer="${viewId}">
+      <div class="news-card-heading border-t-4 border-t-emerald-500"><div><span>Pesquisa por pesquisa</span><strong>${ui.round === 'second' ? 'Segundo turno' : viewId === 'senate' ? 'Turno único' : 'Primeiro turno'}</strong></div><small>${observations.length} levantamento${observations.length === 1 ? '' : 's'}</small></div>
+      <div class="grid gap-3 border-b border-slate-800 bg-slate-950 p-3 lg:grid-cols-[auto_minmax(120px,.6fr)_minmax(180px,1fr)_minmax(180px,1fr)]">
+        <div class="grid grid-cols-${rounds.includes('second') ? '2' : '1'} gap-2" role="group" aria-label="Turno eleitoral">
+          <button type="button" data-office-parity-round="first" class="control-button ${ui.round === 'first' ? 'is-active' : ''}">${viewId === 'senate' ? 'Turno único' : '1º turno'}</button>
+          ${rounds.includes('second') ? `<button type="button" data-office-parity-round="second" class="control-button ${ui.round === 'second' ? 'is-active' : ''}">2º turno</button>` : ''}
+        </div>
+        <label class="control-label"><span>Estado</span><select data-office-parity-uf class="control-select">${officeParityUfs(viewId).map((uf) => `<option value="${uf}" ${ui.uf === uf ? 'selected' : ''}>${uf}</option>`).join('')}</select></label>
+        <label class="control-label"><span>Instituto</span><select data-office-parity-institute class="control-select"><option value="all">Todos os institutos</option>${institutes.map((name) => `<option value="${escapeHtml(name)}" ${ui.institute === name ? 'selected' : ''}>${escapeHtml(name)}</option>`).join('')}</select></label>
+        <label class="control-label"><span>${ui.round === 'second' ? 'Confronto' : 'Cenário'}</span><select data-office-parity-scenario class="control-select"><option value="all">Todos os cenários</option>${scenarios.map((scenario) => `<option value="${escapeHtml(scenario)}" ${ui.scenario === scenario ? 'selected' : ''}>${escapeHtml(scenario)}</option>`).join('')}</select></label>
+      </div>
+      <div class="border-b border-slate-800 bg-slate-900 px-3 py-3">
+        <div class="mb-2 flex items-center justify-between gap-3"><span class="text-[11px] font-bold uppercase tracking-widest text-slate-500">Candidatos visíveis</span><button type="button" data-office-parity-show-all class="text-xs font-bold uppercase tracking-wide text-emerald-600">Mostrar todos</button></div>
+        <div class="candidate-photo-grid">${candidates.map((candidate) => `<button type="button" data-office-parity-candidate="${candidate.id}" class="candidate-photo-card ${ui.selectedCandidates.has(candidate.id) ? 'is-active' : ''}" style="--candidate-color:${candidate.color}">
+          ${candidatePhotoMarkup(candidate, 'md')}
+          <span class="min-w-0 text-left"><strong>${escapeHtml(candidate.name)}</strong><small>${escapeHtml(candidate.party)}</small></span>
+          <i aria-hidden="true"></i>
+        </button>`).join('') || '<div class="border border-slate-200 bg-white p-4 text-sm text-slate-500">Nenhum candidato com resultado publicado para este filtro.</div>'}</div>
+      </div>
+      <div class="chart-layout">
+        <div class="relative overflow-x-auto bg-slate-950 p-2 sm:p-4">
+          <svg class="block min-h-[420px] w-full min-w-[840px]" data-office-parity-chart role="img" aria-label="Gráfico de pesquisas eleitorais de ${escapeHtml(definition.title)}"></svg>
+          <div class="pointer-events-none absolute hidden min-w-60 border border-slate-600 bg-slate-950/95 p-3 text-sm shadow-2xl" data-office-parity-tooltip></div>
+        </div>
+        <aside class="chart-ranking" data-office-parity-ranking aria-label="Ranking mais recente dos candidatos"></aside>
+      </div>
+      <div class="flex flex-wrap gap-2 border-t border-slate-800 bg-slate-900 px-3 py-3" data-office-parity-legend></div>
+      <div class="grid gap-3 border-t border-slate-800 bg-slate-950 p-3 md:grid-cols-[1fr_auto] md:items-center">
+        <p class="text-xs leading-relaxed text-slate-500">As linhas conectam somente resultados do mesmo candidato, na mesma disputa estadual e no mesmo turno. Não representam média ou projeção.</p>
+        <button type="button" data-office-parity-latest class="control-button">Abrir último levantamento</button>
+      </div>
+    </article>`;
+  }
+
+  function officeParityDrawChart(root, viewId) {
+    const svg = root.querySelector('[data-office-parity-chart]');
+    const tooltip = root.querySelector('[data-office-parity-tooltip]');
+    const legend = root.querySelector('[data-office-parity-legend]');
+    const ranking = root.querySelector('[data-office-parity-ranking]');
+    if (!svg) return;
+
+    const ui = officeParityState(viewId);
+    const observations = officeParityCurrentObservations(viewId);
+    const roster = officeParityRoster(viewId, ui.uf);
+    const candidateMap = new Map(roster.map((candidate) => [candidate.id, candidate]));
+    const candidateIds = unique(observations.flatMap((observation) => Object.keys(observation.values)))
+      .filter((id) => ui.selectedCandidates.has(id));
+    const width = Math.max(960, observations.length * 150 + 180);
+    const height = candidateIds.length > 10 ? 560 : 500;
+    const pad = { left: 58, right: 54, top: 42, bottom: 98 };
+    const plotW = width - pad.left - pad.right;
+    const plotH = height - pad.top - pad.bottom;
+    const rawMax = Math.max(0, ...observations.flatMap((observation) => Object.values(observation.values)));
+    const maxY = Math.max(20, Math.ceil((rawMax + 5) / 10) * 10);
+    const x = (index) => pad.left + (observations.length <= 1 ? plotW / 2 : index / (observations.length - 1) * plotW);
+    const y = (value) => pad.top + plotH - (Number(value) / maxY) * plotH;
+
+    svg.replaceChildren();
+    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    const defs = svgEl('defs');
+    svg.appendChild(defs);
+
+    for (let value = 0; value <= maxY; value += 10) {
+      const yy = y(value);
+      svg.appendChild(svgEl('line', { x1: pad.left, y1: yy, x2: width - pad.right, y2: yy, class: 'chart-grid-line' }));
+      svg.appendChild(svgEl('text', { x: pad.left - 9, y: yy + 4, class: 'chart-axis-label', 'text-anchor': 'end' }, `${value}%`));
+    }
+
+    observations.forEach((observation, index) => {
+      const xx = x(index);
+      svg.appendChild(svgEl('line', { x1: xx, y1: pad.top, x2: xx, y2: pad.top + plotH, class: 'chart-event-line' }));
+      svg.appendChild(svgEl('text', { x: xx, y: height - 62, class: 'chart-date-label', 'text-anchor': 'middle' }, observation.publication));
+      svg.appendChild(svgEl('text', { x: xx, y: height - 43, class: 'chart-institute-label', 'text-anchor': 'middle' }, observation.institute.length > 16 ? `${observation.institute.slice(0, 15)}…` : observation.institute));
+      svg.appendChild(svgEl('text', { x: xx, y: height - 24, class: 'chart-scenario-label', 'text-anchor': 'middle' }, observation.scenario.length > 22 ? `${observation.scenario.slice(0, 21)}…` : observation.scenario));
+    });
+
+    candidateIds.forEach((candidateId) => {
+      const candidate = candidateMap.get(candidateId);
+      const points = observations.map((observation, index) => Object.hasOwn(observation.values, candidateId)
+        ? { observation, index, value: observation.values[candidateId], x: x(index), y: y(observation.values[candidateId]) }
+        : null).filter(Boolean);
+      if (!candidate || !points.length) return;
+
+      if (points.length > 1) {
+        svg.appendChild(svgEl('path', {
+          d: points.map((point, index) => `${index ? 'L' : 'M'} ${point.x} ${point.y}`).join(' '),
+          fill: 'none',
+          stroke: candidate.color,
+          'stroke-width': ui.round === 'second' ? 5 : 3.5,
+          'stroke-linecap': 'round',
+          'stroke-linejoin': 'round',
+          class: 'chart-series-line'
+        }));
+      }
+
+      points.forEach((point) => {
+        const dot = svgEl('circle', { cx: point.x, cy: point.y, r: ui.round === 'second' ? 6.5 : 5.5, fill: candidate.color, stroke: '#020617', 'stroke-width': 3, class: 'chart-point' });
+        const hit = svgEl('circle', {
+          cx: point.x, cy: point.y, r: 14, fill: 'transparent', class: 'chart-hit-area',
+          tabindex: '0', role: 'button',
+          'aria-label': `${candidate.name}, ${formatNumber(point.value)}%, ${point.observation.institute}, ${point.observation.publication}`
+        });
+        const show = (event) => {
+          tooltip.innerHTML = `<div class="flex items-center gap-3">${candidatePhotoMarkup(candidate, 'md')}<span><strong class="block font-display text-lg uppercase text-white">${escapeHtml(candidate.name)} · ${formatNumber(point.value)}%</strong><small class="block text-xs text-slate-400">${escapeHtml(candidate.party)}</small></span></div><span class="mt-3 block text-xs text-slate-300">${escapeHtml(point.observation.institute)} · ${escapeHtml(point.observation.publication)}</span><span class="mt-1 block text-xs text-slate-500">${escapeHtml(point.observation.scenario)} · ${escapeHtml(point.observation.sample)} · ${escapeHtml(point.observation.margin)}</span>`;
+          bindPhotoFallbacks(tooltip);
+          tooltip.classList.remove('hidden');
+          const parent = tooltip.parentElement.getBoundingClientRect();
+          const px = event.clientX ? event.clientX - parent.left : parent.width / 2;
+          const py = event.clientY ? event.clientY - parent.top : 80;
+          tooltip.style.left = `${Math.max(8, Math.min(parent.width - 270, px + 12))}px`;
+          tooltip.style.top = `${Math.max(8, py - 94)}px`;
+        };
+        hit.addEventListener('pointerenter', show);
+        hit.addEventListener('pointermove', show);
+        hit.addEventListener('pointerleave', () => tooltip.classList.add('hidden'));
+        hit.addEventListener('focus', show);
+        hit.addEventListener('blur', () => tooltip.classList.add('hidden'));
+        hit.addEventListener('click', () => officeParityOpenDialog(viewId, point.observation.id));
+        hit.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ' ') officeParityOpenDialog(viewId, point.observation.id);
+        });
+        svg.appendChild(dot);
+        svg.appendChild(hit);
+      });
+
+      const latest = points.at(-1);
+      const size = ui.round === 'second' ? 48 : 34;
+      const half = size / 2;
+      const clipId = `office-${viewId}-${officeParitySlug(candidateId)}-${Math.round(latest.x)}`;
+      const clip = svgEl('clipPath', { id: clipId });
+      clip.appendChild(svgEl('rect', { x: latest.x - half, y: latest.y - half, width: size, height: size }));
+      defs.appendChild(clip);
+      svg.appendChild(svgEl('rect', { x: latest.x - half, y: latest.y - half, width: size, height: size, fill: '#e2e8f0', class: 'chart-candidate-photo-fallback' }));
+      svg.appendChild(svgEl('text', { x: latest.x, y: latest.y + 4, fill: '#0f172a', class: 'chart-candidate-initials', 'text-anchor': 'middle' }, candidateInitials(candidate)));
+      const portrait = svgEl('image', {
+        href: candidatePhoto(candidate),
+        x: latest.x - half, y: latest.y - half, width: size, height: size,
+        preserveAspectRatio: 'xMidYMid slice', 'clip-path': `url(#${clipId})`, class: 'chart-candidate-photo'
+      });
+      portrait.addEventListener('error', () => portrait.remove(), { once: true });
+      svg.appendChild(portrait);
+      svg.appendChild(svgEl('rect', { x: latest.x - half, y: latest.y - half, width: size, height: size, fill: 'none', stroke: candidate.color, 'stroke-width': 3, class: 'chart-candidate-photo-border' }));
+    });
+
+    if (!observations.length) {
+      svg.appendChild(svgEl('text', { x: width / 2, y: height / 2 - 12, class: 'chart-empty-label', 'text-anchor': 'middle' }, 'Nenhuma pesquisa nominal verificável para este filtro.'));
+      svg.appendChild(svgEl('text', { x: width / 2, y: height / 2 + 18, class: 'chart-institute-label', 'text-anchor': 'middle' }, 'A estrutura permanece igual à página presidencial e será preenchida quando houver publicação.'));
+    }
+
+    const rankingRows = candidateIds.map((id) => {
+      const candidate = candidateMap.get(id);
+      const observation = observations.slice().reverse().find((item) => Object.hasOwn(item.values, id));
+      return candidate && observation ? { candidate, observation, value: observation.values[id] } : null;
+    }).filter(Boolean).sort((a, b) => b.value - a.value || a.candidate.name.localeCompare(b.candidate.name, 'pt-BR'));
+
+    ranking.innerHTML = `<div class="chart-ranking-heading"><span>Último dado disponível</span><strong>Ranking com fotos</strong></div>
+      <div class="chart-ranking-list">${rankingRows.map((row, index) => `<button type="button" data-office-parity-observation="${row.observation.id}" class="chart-ranking-row" style="--candidate-color:${row.candidate.color}">
+        <span class="chart-ranking-position">${index + 1}</span>${candidatePhotoMarkup(row.candidate, 'sm')}
+        <span class="min-w-0"><strong>${escapeHtml(row.candidate.name)}</strong><small>${escapeHtml(row.candidate.party)} · ${escapeHtml(row.observation.publication)}</small></span>
+        <b>${formatNumber(row.value)}%</b>
+      </button>`).join('') || '<div class="p-5 text-sm text-slate-500">Sem ranking publicado para este filtro.</div>'}</div>`;
+
+    ranking.querySelectorAll('[data-office-parity-observation]').forEach((button) => button.addEventListener('click', () => officeParityOpenDialog(viewId, button.dataset.officeParityObservation)));
+    bindPhotoFallbacks(ranking);
+
+    legend.innerHTML = candidateIds.map((id) => {
+      const candidate = candidateMap.get(id);
+      return `<span class="candidate-legend-item" style="--candidate-color:${candidate.color}">${candidatePhotoMarkup(candidate, 'xs')}<span>${escapeHtml(candidate.name)} · ${escapeHtml(candidate.party)}</span></span>`;
+    }).join('');
+    bindPhotoFallbacks(legend);
+  }
+
+  function officeParityLatestAuditMarkup(viewId) {
+    const ui = officeParityState(viewId);
+    const observations = officeParityObservations(viewId)
+      .filter((observation) => observation.uf === ui.uf)
+      .slice().sort((a, b) => dateValue(b.date) - dateValue(a.date)).slice(0, 7);
+    const official = officeParityRegistryRows(viewId, ui.uf).length;
+
+    return `<div class="grid gap-4 xl:grid-cols-[1.25fr_.75fr]">
+      <article class="news-card">
+        <div class="news-card-heading"><div><span>Últimos levantamentos</span><strong>Publicações verificadas</strong></div><small>Sem cálculo de média</small></div>
+        <div class="divide-y divide-slate-800">${observations.map((observation) => `<button type="button" data-office-parity-observation="${observation.id}" class="grid w-full gap-3 px-4 py-4 text-left transition hover:bg-slate-50 sm:grid-cols-[100px_minmax(0,1fr)_auto] sm:items-center">
+          <span class="font-display text-lg font-black text-white">${escapeHtml(observation.publication)}</span>
+          <span class="min-w-0"><strong class="block truncate text-sm text-slate-100">${escapeHtml(observation.institute)}</strong><small class="mt-1 block truncate text-xs text-slate-500">${observation.round === 'second' ? '2º turno' : viewId === 'senate' ? 'turno único' : '1º turno'} · ${escapeHtml(observation.scenario)} · ${escapeHtml(observation.registry || 'registro não confirmado')}</small></span>
+          <span class="flex flex-wrap justify-start gap-1 sm:justify-end">${observation.candidates.slice().sort((a, b) => b.value - a.value).slice(0, 3).map((candidate) => `<i class="poll-result-chip">${candidatePhotoMarkup(candidate, 'xs')}<span>${escapeHtml(candidate.name)} <b>${formatNumber(candidate.value)}%</b></span></i>`).join('')}</span>
+        </button>`).join('') || '<div class="p-8 text-center text-sm text-slate-500">Nenhum levantamento nominal verificável publicado para esta UF.</div>'}</div>
+      </article>
+      <article class="news-card">
+        <div class="news-card-heading"><div><span>Auditoria dos dados</span><strong>Duas camadas independentes</strong></div><small>Transparência</small></div>
+        <div class="space-y-4 p-4 text-sm leading-relaxed text-slate-300">
+          <div class="border-l-4 border-emerald-500 bg-slate-950 p-3"><strong class="block font-display text-lg uppercase text-white">Resultados publicados</strong><p class="mt-1 text-slate-400">Percentuais aparecem somente quando há publicação verificável para o cargo e a UF selecionados.</p></div>
+          <div class="border-l-4 border-blue-500 bg-slate-950 p-3"><strong class="block font-display text-lg uppercase text-white">Registros do TSE</strong><p class="mt-1 text-slate-400">A base oficial cadastral permanece separada dos números publicados pelos institutos.</p></div>
+          <div class="grid grid-cols-2 gap-3"><div class="border border-slate-800 bg-slate-950 p-3"><span class="text-xs uppercase text-slate-500">Resultados no catálogo</span><strong class="mt-1 block font-display text-2xl text-white">${observations.length}</strong></div><div class="border border-slate-800 bg-slate-950 p-3"><span class="text-xs uppercase text-slate-500">Registros oficiais</span><strong class="mt-1 block font-display text-2xl text-white">${state.registryLoading ? '…' : official}</strong></div></div>
+        </div>
+      </article>
+    </div>`;
+  }
+
+  function officeParityTableMarkup(viewId) {
+    const ui = officeParityState(viewId);
+    const observations = officeParityObservations(viewId)
+      .filter((observation) => observation.uf === ui.uf)
+      .slice().sort((a, b) => dateValue(b.date) - dateValue(a.date) || a.id.localeCompare(b.id));
+
+    return `<article class="news-card">
+      <div class="news-card-heading"><div><span>Catálogo completo</span><strong>Pesquisa por pesquisa</strong></div><small>${observations.length} cenário${observations.length === 1 ? '' : 's'}</small></div>
+      <div class="overflow-x-auto"><table class="data-table"><thead><tr><th>Publicação</th><th>Turno/cenário</th><th>UF</th><th>Instituto</th><th>Campo</th><th>Amostra</th><th>Margem</th><th>Registro</th><th>Resultados</th><th>Fonte</th></tr></thead><tbody>
+        ${observations.map((observation) => `<tr><td><strong>${escapeHtml(observation.publication)}</strong></td><td><span class="table-badge">${observation.round === 'second' ? '2º turno' : viewId === 'senate' ? 'Turno único' : '1º turno'}</span><small>${escapeHtml(observation.scenario)}</small></td><td>${escapeHtml(observation.uf)}</td><td>${escapeHtml(observation.institute)}</td><td>${escapeHtml(observation.field)}</td><td>${escapeHtml(observation.sample)}</td><td>${escapeHtml(observation.margin)}</td><td>${escapeHtml(observation.registry || 'Não confirmado')}</td><td><div class="flex min-w-[320px] flex-wrap gap-1">${observation.candidates.map((candidate) => `<button type="button" data-office-parity-observation="${observation.id}" class="poll-table-candidate">${candidatePhotoMarkup(candidate, 'xs')}<span>${escapeHtml(candidate.name)} <b>${formatNumber(candidate.value)}%</b></span></button>`).join('')}</div></td><td><a class="source-link" href="${escapeHtml(observation.source)}" target="_blank" rel="noopener noreferrer">Abrir</a></td></tr>`).join('') || '<tr><td colspan="10"><div class="p-8 text-center text-sm text-slate-500">Nenhuma pesquisa nominal verificável. A página mantém todos os mesmos elementos da Presidência aguardando dados publicados.</div></td></tr>'}
+      </tbody></table></div>
+    </article>`;
+  }
+
+  function officeParityNeutralSeatMarkup(viewId, uf, compact = false) {
+    const total = viewId === 'district' ? 24 : officeAssemblySeats[uf];
+    if (!total) return '';
+    const model = {
+      title: viewId === 'district' ? 'Simulador da Câmara Legislativa do DF' : `Simulador da Assembleia Legislativa — ${uf}`,
+      total,
+      contestedLabel: `${total} cadeiras`,
+      basis: 'Estrutura total da casa; distribuição partidária depende de pesquisa proporcional verificável.',
+      source: 'https://www.tse.jus.br/eleicoes/eleicoes-2026',
+      note: 'As cadeiras aparecem sem distribuição partidária porque não há pesquisa proporcional nominal e partidária suficiente no catálogo para sustentar uma projeção. O painel não transforma perfis monitorados em votos.',
+      parties: [{ party: 'Sem projeção', seats: total }]
+    };
+    const visibleParties = model.parties;
+    return `<section class="mx-auto w-full max-w-6xl border border-slate-200 bg-white" data-seat-simulation="${viewId}" data-seat-compact="${compact ? 'true' : 'false'}">
+      <div class="flex flex-col gap-2 border-b border-slate-200 bg-slate-50 p-3 sm:flex-row sm:items-center sm:justify-between"><div><span class="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-700">Simulador de cadeiras</span><h3 class="mt-1 font-display text-xl font-black uppercase text-slate-950">${escapeHtml(model.title)}</h3><p class="mt-1 text-xs text-slate-600">${escapeHtml(model.basis)}</p></div><span class="self-start border border-emerald-600 bg-emerald-50 px-2 py-1 font-display text-sm font-black uppercase text-emerald-900 sm:self-center">${escapeHtml(model.contestedLabel)}</span></div>
+      <div class="mx-auto w-full ${compact ? 'max-w-[520px]' : 'max-w-[680px]'} p-3">${extendedHemicycleSvg(model)}<div class="mt-2 flex justify-center">${visibleParties.map((item) => `<span class="inline-flex items-center gap-1 border border-slate-200 px-2 py-1 text-xs font-bold text-slate-700"><i class="h-3 w-3" style="background:${extendedColor(item.party)}"></i>${escapeHtml(item.party)} <b>${item.seats}</b></span>`).join('')}</div></div>
+      <details class="border-t border-slate-200 bg-slate-50 p-3 text-xs leading-relaxed text-slate-700"><summary class="cursor-pointer font-bold uppercase tracking-wide text-slate-800">Metodologia e limite do modelo</summary><p class="mt-2">${escapeHtml(model.note)}</p></details>
+    </section>`;
+  }
+
+  function officeParitySeatMarkup(viewId, compact = false) {
+    const ui = officeParityState(viewId);
+    if (viewId === 'senate') return extendedSeatSimulationMarkup('senate', compact);
+    if (viewId === 'chamber') return extendedSeatSimulationMarkup('chamber', compact);
+    if (viewId === 'assemblies' || viewId === 'district') return officeParityNeutralSeatMarkup(viewId, ui.uf, compact);
+    return '';
+  }
+
+  function officeParityOpenDialog(viewId, observationId) {
+    const observation = officeParityObservations(viewId).find((item) => item.id === observationId);
+    const dialog = $('pollDialog');
+    if (!observation || !dialog) return;
+
+    $('dialogBody').innerHTML = `<div class="space-y-5">
+      <div><span class="font-display text-sm font-black uppercase tracking-widest text-emerald-600">${observation.round === 'second' ? '2º turno' : viewId === 'senate' ? 'Turno único' : '1º turno'} · ${escapeHtml(observation.scenario)}</span><h2 class="mt-2 font-display text-4xl font-black uppercase text-slate-950">${escapeHtml(observation.institute)}</h2><p class="mt-2 text-sm text-slate-500">${escapeHtml(observation.uf)} · publicada em ${escapeHtml(observation.publication)} · campo ${escapeHtml(observation.field)}</p></div>
+      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">${[['Amostra', observation.sample], ['Margem', observation.margin], ['Registro', observation.registry || 'Não confirmado'], ['Abrangência', observation.stateName]].map(([label, value]) => `<div class="border border-slate-200 bg-slate-50 p-3"><span class="text-[10px] font-bold uppercase tracking-widest text-slate-500">${label}</span><strong class="mt-1 block text-sm text-slate-950">${escapeHtml(value)}</strong></div>`).join('')}</div>
+      <div class="grid gap-2 sm:grid-cols-2">${observation.candidates.slice().sort((a, b) => b.value - a.value).map((candidate, index) => `<div class="poll-dialog-candidate" style="--candidate-color:${candidate.color}"><span class="candidate-rank-badge">${index + 1}</span>${candidatePhotoMarkup(candidate, 'lg')}<span class="min-w-0"><strong>${escapeHtml(candidate.name)}</strong><small>${escapeHtml(candidate.party)}</small></span><b>${formatNumber(candidate.value)}%</b></div>`).join('')}</div>
+      ${(observation.undecided || observation.blank) ? `<div class="flex flex-wrap gap-2">${observation.undecided ? `<span class="table-badge">Indecisos ${formatNumber(observation.undecided)}%</span>` : ''}${observation.blank ? `<span class="table-badge">Branco/nulo ${formatNumber(observation.blank)}%</span>` : ''}</div>` : ''}
+      <div class="border-l-4 border-amber-400 bg-amber-50 p-3 text-sm text-amber-950">Este resultado pertence exclusivamente ao cargo, à UF, ao turno e ao cenário indicados.</div>
+      <a class="inline-flex min-h-11 items-center justify-center bg-emerald-500 px-5 py-3 text-sm font-black uppercase tracking-wide text-slate-950 hover:bg-emerald-400" href="${escapeHtml(observation.source)}" target="_blank" rel="noopener noreferrer">Abrir fonte publicada</a>
+    </div>`;
+    bindPhotoFallbacks($('dialogBody'));
+    dialog.showModal();
+  }
+
+  function officeParityInnerMarkup(viewId, context = 'full') {
+    const definition = extendedOfficeDefinitions[viewId];
+    const ui = officeParityState(viewId);
+    const description = `A mesma estrutura da página presidencial aplicada a ${definition.title.toLowerCase()}: filtros, fotos, gráfico temporal, ranking, fontes e catálogo completo.`;
+    const header = headerMarkup(definition.eyebrow, definition.title, description, `<div class="flex flex-wrap gap-2"><span class="status-chip"><i class="bg-emerald-500"></i>${escapeHtml(ui.uf)}</span><span class="status-chip"><i class="bg-blue-500"></i>Dados auditáveis</span></div>`);
+
+    if (context === 'overview') {
+      return `${header}
+        ${officeParityKpis(viewId)}
+        ${officeParityExplorerMarkup(viewId)}
+        ${officeParityLatestAuditMarkup(viewId)}
+        ${officeParitySeatMarkup(viewId, true)}`;
+    }
+
+    return `${header}
+      ${officeParityRosterMarkup(viewId)}
+      ${officeParityExplorerMarkup(viewId)}
+      ${officeParitySeatMarkup(viewId, false)}
+      ${officeParityTableMarkup(viewId)}`;
+  }
+
+  function officeParityRenderHost(host, viewId, context = 'full') {
+    if (!host) return;
+    host.innerHTML = officeParityInnerMarkup(viewId, context);
+    host.dataset.officeParityHost = viewId;
+    host.dataset.officeParityContext = context;
+    officeParityBindHost(host, viewId, context);
+  }
+
+  function officeParityResetCandidates(viewId) {
+    const ui = officeParityState(viewId);
+    ui.selectedCandidates = new Set(officeParityRoster(viewId, ui.uf).map((candidate) => candidate.id));
+  }
+
+  function officeParityBindHost(host, viewId, context) {
+    bindPhotoFallbacks(host);
+    const ui = officeParityState(viewId);
+
+    host.querySelectorAll('[data-office-parity-round]').forEach((button) => button.addEventListener('click', () => {
+      ui.round = button.dataset.officeParityRound;
+      ui.institute = 'all';
+      ui.scenario = 'all';
+      officeParityResetCandidates(viewId);
+      officeParityRenderHost(host, viewId, context);
+    }));
+
+    host.querySelector('[data-office-parity-uf]')?.addEventListener('change', (event) => {
+      ui.uf = event.target.value;
+      ui.round = officeParityAvailableRounds(viewId, ui.uf)[0];
+      ui.institute = 'all';
+      ui.scenario = 'all';
+      officeParityResetCandidates(viewId);
+      officeParityRenderHost(host, viewId, context);
+    });
+
+    host.querySelector('[data-office-parity-institute]')?.addEventListener('change', (event) => {
+      ui.institute = event.target.value;
+      ui.scenario = 'all';
+      officeParityRenderHost(host, viewId, context);
+    });
+
+    host.querySelector('[data-office-parity-scenario]')?.addEventListener('change', (event) => {
+      ui.scenario = event.target.value;
+      officeParityRenderHost(host, viewId, context);
+    });
+
+    host.querySelectorAll('[data-office-parity-candidate]').forEach((button) => button.addEventListener('click', () => {
+      const id = button.dataset.officeParityCandidate;
+      if (ui.selectedCandidates.has(id)) ui.selectedCandidates.delete(id);
+      else ui.selectedCandidates.add(id);
+      if (!ui.selectedCandidates.size) ui.selectedCandidates.add(id);
+      officeParityRenderHost(host, viewId, context);
+    }));
+
+    host.querySelector('[data-office-parity-show-all]')?.addEventListener('click', () => {
+      officeParityResetCandidates(viewId);
+      officeParityRenderHost(host, viewId, context);
+    });
+
+    host.querySelector('[data-office-parity-latest]')?.addEventListener('click', () => {
+      const latest = officeParityCurrentObservations(viewId).at(-1);
+      if (latest) officeParityOpenDialog(viewId, latest.id);
+    });
+
+    host.querySelectorAll('[data-office-parity-observation]').forEach((button) => button.addEventListener('click', () => officeParityOpenDialog(viewId, button.dataset.officeParityObservation)));
+    officeParityDrawChart(host, viewId);
+  }
+
+  const officeParityPreviousOverview = renderOverview;
+  const officeParityPreviousOfficeView = renderOfficeView;
+
+  renderOverview = function renderParityOverview() {
+    officeParityPreviousOverview();
+    const host = $('overview');
+    if (!host) return;
+
+    host.querySelector('[data-overview-continuation]')?.remove();
+    const continuation = document.createElement('div');
+    continuation.className = 'space-y-12 pt-2';
+    continuation.setAttribute('data-overview-continuation', 'parity');
+    continuation.innerHTML = `<nav class="sticky top-[69px] z-30 flex gap-1 overflow-x-auto border-y border-slate-200 bg-white/95 p-2 backdrop-blur" aria-label="Categorias na visão geral">${Object.entries(extendedOfficeDefinitions).map(([id, definition]) => `<button type="button" class="control-button shrink-0" data-office-parity-jump="${id}">${escapeHtml(definition.title)}</button>`).join('')}</nav>
+      ${Object.keys(extendedOfficeDefinitions).map((id) => `<section class="space-y-6 scroll-mt-24" data-overview-office="${id}"></section>`).join('')}`;
+    host.appendChild(continuation);
+
+    continuation.querySelectorAll('[data-office-parity-jump]').forEach((button) => button.addEventListener('click', () => continuation.querySelector(`[data-overview-office="${button.dataset.officeParityJump}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })));
+    Object.keys(extendedOfficeDefinitions).forEach((id) => officeParityRenderHost(continuation.querySelector(`[data-overview-office="${id}"]`), id, 'overview'));
+  };
+
+  renderOfficeView = function renderParityOfficeView(viewId, office) {
+    const host = $(viewId);
+    if (!host || !extendedOfficeDefinitions[viewId]) return officeParityPreviousOfficeView(viewId, office);
+    officeParityRenderHost(host, viewId, 'full');
+  };
