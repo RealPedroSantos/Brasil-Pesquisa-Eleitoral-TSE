@@ -1,0 +1,90 @@
+      </div>
+      <article class="news-card"><div class="news-card-heading"><div><span>Institutos no catálogo</span><strong>Fontes identificadas</strong></div><small>${sources.length} instituições</small></div><div class="grid gap-px bg-slate-800 sm:grid-cols-2 lg:grid-cols-3">${sources.map((source) => `<div class="bg-slate-950 p-4"><strong class="font-display text-xl uppercase text-white">${escapeHtml(source)}</strong><span class="mt-1 block text-xs text-slate-500">${DATA.polls.filter((poll) => poll.institute === source).length} cenário(s) publicado(s)</span></div>`).join('')}</div></article>`;
+  }
+
+  function renderMethodology() {
+    $('methodology').innerHTML = `
+      ${headerMarkup('Metodologia', 'Regras para impedir distorção dos gráficos', 'A estrutura foi refeita para tornar explícito o que é dado oficial, resultado publicado, cenário, turno e eventual ausência de informação.')}
+      <div class="grid gap-4 lg:grid-cols-2">
+        ${[
+          ['1. Turnos separados', 'Nenhum resultado de primeiro turno é combinado com segundo turno. No segundo turno, cada confronto possui sua própria série.'],
+          ['2. Cenários separados', 'Quando um instituto publica mais de um cenário na mesma rodada, cada cenário é armazenado como observação independente.'],
+          ['3. Sem média automática', 'O gráfico principal mostra pesquisa por pesquisa. Linhas apenas conectam o mesmo candidato ao longo do tempo.'],
+          ['4. Ausência não é zero', 'Quando um candidato não aparece em determinado cenário, o gráfico deixa o ponto ausente; nunca registra 0% por conveniência.'],
+          ['5. Registro não é resultado', 'O TSE confirma o cadastro e a metodologia, mas o percentual precisa ser localizado na publicação do instituto ou em fonte verificável.'],
+          ['6. Auditoria aberta', 'Cada ponto abre instituto, data, campo, amostra, margem, registro, resultados e link da fonte usada.']
+        ].map(([title, text]) => `<article class="news-card p-5"><strong class="font-display text-2xl uppercase text-white">${title}</strong><p class="mt-3 text-sm leading-relaxed text-slate-400">${text}</p></article>`).join('')}
+      </div>`;
+  }
+
+  function showView(id) {
+    state.view = id;
+    qsa('.view-section').forEach((section) => section.classList.toggle('hidden', section.id !== id));
+    qsa('[data-view]').forEach((button) => button.classList.toggle('is-active', button.dataset.view === id));
+    $('sidebar').classList.remove('translate-x-0');
+    $('sidebar').classList.add('-translate-x-full', 'lg:translate-x-0');
+    if (id === 'overview') renderOverview();
+    if (id === 'president') renderPresident();
+    if (OFFICE_VIEW[id]) renderOfficeView(id, OFFICE_VIEW[id]);
+    if (id === 'registry') renderRegistry();
+    if (id === 'sources') renderSources();
+    if (id === 'methodology') renderMethodology();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    history.replaceState(null, '', `#${id}`);
+  }
+
+  function bindGlobalEvents() {
+    qsa('[data-view]').forEach((button) => button.addEventListener('click', () => showView(button.dataset.view)));
+    qsa('[data-nav]').forEach((link) => link.addEventListener('click', (event) => { event.preventDefault(); showView(link.dataset.nav); }));
+    $('mobileMenuButton').addEventListener('click', () => {
+      $('sidebar').classList.toggle('-translate-x-full');
+      $('sidebar').classList.toggle('translate-x-0');
+    });
+    $('closeDialog').addEventListener('click', () => $('pollDialog').close());
+    $('pollDialog').addEventListener('click', (event) => { if (event.target === $('pollDialog')) $('pollDialog').close(); });
+    window.addEventListener('resize', () => {
+      if (state.view === 'overview') renderOverview();
+      if (state.view === 'president') renderPresident();
+    });
+  }
+
+  async function loadRegistry() {
+    state.registryLoading = true;
+    state.registryError = '';
+    try {
+      const response = await fetch(`/api/tse-registry-v2?ts=${Date.now()}`, { cache: 'no-store' });
+      const data = await response.json();
+      if (!response.ok || !data.ok) throw new Error(data.detail || data.error || 'Falha ao carregar base oficial.');
+      state.registry = data.records || [];
+      state.registryMeta = data.meta || null;
+    } catch (error) {
+      state.registryError = error.message;
+      state.registry = [];
+      state.registryMeta = null;
+    } finally {
+      state.registryLoading = false;
+      if (state.view === 'overview') renderOverview();
+      if (OFFICE_VIEW[state.view]) renderOfficeView(state.view, OFFICE_VIEW[state.view]);
+      if (state.view === 'registry') renderRegistry();
+    }
+  }
+
+  function startClock() {
+    const tick = () => {
+      $('liveClock').textContent = new Date().toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+    };
+    tick();
+    setInterval(tick, 1000);
+  }
+
+  function init() {
+    $('catalogVersion').textContent = DATA.version;
+    bindGlobalEvents();
+    startClock();
+    const hash = location.hash.replace('#', '');
+    showView(document.getElementById(hash) ? hash : 'overview');
+    loadRegistry();
+    requestAnimationFrame(() => $('bootScreen').remove());
+  }
+
+  document.addEventListener('DOMContentLoaded', init, { once: true });
