@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="pt-BR" class="bg-slate-950">
+<html lang="pt-BR" class="bg-slate-50">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#020617">
+  <meta name="theme-color" content="#f8fafc">
   <title>Pesquisas Eleitorais 2026 — Painel auditável</title>
   <meta name="description" content="Painel auditável de pesquisas eleitorais de 2026, com resultados publicados separados dos registros oficiais do TSE.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -11,43 +11,43 @@
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="tailwind.css">
 </head>
-<body class="min-h-screen bg-slate-950 font-sans text-slate-100 antialiased">
+<body class="min-h-screen bg-slate-50 font-sans text-slate-900 antialiased">
   <div id="app" class="min-h-screen">
-    <div class="fixed inset-0 z-[100] grid place-items-center bg-slate-950" id="bootScreen" aria-hidden="true">
-      <div class="w-[min(84vw,360px)] border border-slate-700 bg-slate-900 p-6">
+    <div class="fixed inset-0 z-[100] grid place-items-center bg-white" id="bootScreen" aria-hidden="true">
+      <div class="w-[min(84vw,360px)] border border-slate-200 bg-white p-6 shadow-lg">
         <div class="mb-4 flex items-center gap-3">
           <span class="h-3 w-3 animate-pulse bg-emerald-500"></span>
-          <strong class="font-display text-lg uppercase tracking-widest">Carregando dados auditáveis</strong>
+          <strong class="font-display text-lg uppercase tracking-widest text-slate-900">Carregando dados auditáveis</strong>
         </div>
-        <div class="h-1 overflow-hidden bg-slate-800"><i class="block h-full w-2/3 animate-pulse bg-emerald-500"></i></div>
+        <div class="h-1 overflow-hidden bg-slate-200"><i class="block h-full w-2/3 animate-pulse bg-emerald-500"></i></div>
       </div>
     </div>
 
-    <header class="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/95 backdrop-blur">
+    <header class="sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur">
       <div class="mx-auto flex max-w-[1800px] items-center gap-4 px-4 py-3 lg:px-6">
-        <button id="mobileMenuButton" type="button" class="grid h-11 w-11 place-items-center border border-slate-700 bg-slate-900 text-xl lg:hidden" aria-label="Abrir menu">☰</button>
+        <button id="mobileMenuButton" type="button" class="grid h-11 w-11 place-items-center border border-slate-300 bg-white text-xl text-slate-900 lg:hidden" aria-label="Abrir menu">☰</button>
         <a href="#overview" data-nav="overview" class="flex min-w-0 items-center gap-3">
           <span class="grid h-11 w-11 shrink-0 place-items-center bg-emerald-500 font-display text-lg font-black text-slate-950">BR</span>
           <span class="min-w-0">
-            <strong class="block truncate font-display text-lg font-black uppercase tracking-wide text-white sm:text-xl">Pesquisas Eleitorais 2026</strong>
-            <small class="block truncate text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Resultados publicados + registros oficiais TSE</small>
+            <strong class="block truncate font-display text-lg font-black uppercase tracking-wide text-slate-950 sm:text-xl">Pesquisas Eleitorais 2026</strong>
+            <small class="block truncate text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Resultados publicados + registros oficiais TSE</small>
           </span>
         </a>
         <div class="ml-auto hidden items-center gap-3 md:flex">
-          <div class="border-l-4 border-emerald-500 bg-slate-900 px-3 py-2">
+          <div class="border-l-4 border-emerald-500 bg-slate-50 px-3 py-2">
             <span class="block text-[10px] font-bold uppercase tracking-widest text-slate-500">Catálogo</span>
-            <strong id="catalogVersion" class="font-display text-sm uppercase text-white">—</strong>
+            <strong id="catalogVersion" class="font-display text-sm uppercase text-slate-900">—</strong>
           </div>
-          <div class="border border-slate-700 bg-slate-900 px-3 py-2 text-right">
+          <div class="border border-slate-200 bg-white px-3 py-2 text-right">
             <span class="block text-[10px] font-bold uppercase tracking-widest text-slate-500">Horário de Brasília</span>
-            <strong id="liveClock" class="font-display text-lg text-white">--:--:--</strong>
+            <strong id="liveClock" class="font-display text-lg text-slate-900">--:--:--</strong>
           </div>
         </div>
       </div>
     </header>
 
     <div class="mx-auto flex max-w-[1800px]">
-      <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 mt-[69px] w-72 -translate-x-full border-r border-slate-800 bg-slate-950 p-4 transition-transform lg:sticky lg:top-[69px] lg:h-[calc(100vh-69px)] lg:w-64 lg:translate-x-0">
+      <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 mt-[69px] w-72 -translate-x-full border-r border-slate-200 bg-white p-4 transition-transform lg:sticky lg:top-[69px] lg:h-[calc(100vh-69px)] lg:w-64 lg:translate-x-0">
         <nav id="mainNav" class="space-y-1" aria-label="Navegação principal">
           <button type="button" data-view="overview" class="nav-button is-active"><span>01</span><b>Visão geral</b></button>
           <button type="button" data-view="president" class="nav-button"><span>02</span><b>Presidência</b></button>
@@ -60,9 +60,9 @@
           <button type="button" data-view="sources" class="nav-button"><span>09</span><b>Fontes e auditoria</b></button>
           <button type="button" data-view="methodology" class="nav-button"><span>10</span><b>Metodologia</b></button>
         </nav>
-        <div class="mt-6 border-t border-slate-800 pt-4 text-xs leading-relaxed text-slate-500">
+        <div class="mt-6 border-t border-slate-200 pt-4 text-xs leading-relaxed text-slate-500">
           <p>Percentuais só aparecem quando há publicação verificável. Registro no TSE e resultado publicado são camadas diferentes.</p>
-          <p class="mt-3 font-semibold text-slate-400">Desenvolvido por Pedro Santos ® 2026</p>
+          <p class="mt-3 font-semibold text-slate-600">Desenvolvido por Pedro Santos ® 2026</p>
         </div>
       </aside>
 
@@ -81,11 +81,11 @@
     </div>
   </div>
 
-  <dialog id="pollDialog" class="w-[min(92vw,820px)] max-w-none border border-slate-700 bg-slate-950 p-0 text-slate-100 backdrop:bg-slate-950/80">
+  <dialog id="pollDialog" class="w-[min(92vw,820px)] max-w-none border border-slate-300 bg-white p-0 text-slate-900 backdrop:bg-slate-950/35">
     <div class="border-t-4 border-emerald-500">
-      <div class="flex items-center justify-between border-b border-slate-800 bg-slate-900 px-4 py-3">
-        <strong class="font-display text-lg uppercase tracking-wide">Detalhes da pesquisa</strong>
-        <button id="closeDialog" type="button" class="grid h-10 w-10 place-items-center border border-slate-700 bg-slate-950 text-xl" aria-label="Fechar">×</button>
+      <div class="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-3">
+        <strong class="font-display text-lg uppercase tracking-wide text-slate-900">Detalhes da pesquisa</strong>
+        <button id="closeDialog" type="button" class="grid h-10 w-10 place-items-center border border-slate-300 bg-white text-xl text-slate-900" aria-label="Fechar">×</button>
       </div>
       <div id="dialogBody" class="p-4 sm:p-6"></div>
     </div>
