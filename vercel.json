@@ -1,9 +1,11 @@
 {
   "cleanUrls": true,
   "trailingSlash": false,
+  "buildCommand": "npm run build",
   "functions": {
     "api/image.js": { "maxDuration": 10 },
     "api/tse-registry.js": { "maxDuration": 30 },
+    "api/tse-registry-v2.js": { "maxDuration": 30 },
     "api/sources.js": { "maxDuration": 15 }
   },
   "headers": [
