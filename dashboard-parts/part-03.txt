@@ -1,0 +1,90 @@
+      svg.appendChild(dateText);
+      const instituteText = svgEl('text', { x: xx, y: height - 37, class: 'chart-institute-label', 'text-anchor': 'middle' }, poll.institute.length > 14 ? `${poll.institute.slice(0, 13)}…` : poll.institute);
+      svg.appendChild(instituteText);
+      const scenarioText = svgEl('text', { x: xx, y: height - 20, class: 'chart-scenario-label', 'text-anchor': 'middle' }, polls.filter((item) => item.date === poll.date).length > 1 ? poll.scenario.replace('Cenário ', 'C') : '');
+      svg.appendChild(scenarioText);
+    });
+
+    candidateIds.forEach((candidateId) => {
+      const candidate = candidateById(candidateId);
+      const points = polls.map((poll, index) => Object.hasOwn(poll.values, candidateId) ? ({ poll, index, value: poll.values[candidateId], x: x(index), y: y(poll.values[candidateId]) }) : null).filter(Boolean);
+      if (!candidate || !points.length) return;
+
+      const path = svgEl('path', {
+        d: points.map((point, index) => `${index ? 'L' : 'M'} ${point.x} ${point.y}`).join(' '),
+        fill: 'none', stroke: candidate.color, 'stroke-width': state.round === 2 ? 5 : 3.5,
+        'stroke-linecap': 'round', 'stroke-linejoin': 'round', class: 'chart-series-line'
+      });
+      svg.appendChild(path);
+
+      points.forEach((point) => {
+        const hit = svgEl('circle', { cx: point.x, cy: point.y, r: 14, fill: 'transparent', class: 'chart-hit-area', tabindex: '0', role: 'button', 'aria-label': `${candidate.name}, ${formatNumber(point.value)}%, ${point.poll.institute}, ${point.poll.publication}` });
+        const dot = svgEl('circle', { cx: point.x, cy: point.y, r: state.round === 2 ? 6.5 : 5.5, fill: candidate.color, stroke: '#020617', 'stroke-width': 3, class: 'chart-point' });
+        const show = (event) => showChartTooltip(event, tooltip, candidate, point.poll, point.value);
+        hit.addEventListener('pointerenter', show);
+        hit.addEventListener('pointermove', show);
+        hit.addEventListener('pointerleave', () => tooltip?.classList.add('hidden'));
+        hit.addEventListener('focus', (event) => showChartTooltip(event, tooltip, candidate, point.poll, point.value, true));
+        hit.addEventListener('blur', () => tooltip?.classList.add('hidden'));
+        hit.addEventListener('click', () => openPollDialog(point.poll.id));
+        hit.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') openPollDialog(point.poll.id); });
+        svg.appendChild(dot);
+        svg.appendChild(hit);
+      });
+    });
+
+    if (!polls.length) {
+      svg.appendChild(svgEl('text', { x: width / 2, y: height / 2, class: 'chart-empty-label', 'text-anchor': 'middle' }, 'Nenhuma pesquisa encontrada para este filtro.'));
+    }
+
+    if (legend) {
+      legend.innerHTML = candidateIds.map((id) => {
+        const candidate = candidateById(id);
+        return `<span class="inline-flex items-center gap-2 border border-slate-700 bg-slate-950 px-3 py-2 text-xs font-bold uppercase tracking-wide text-slate-200"><i class="h-3 w-3" style="background:${candidate.color}"></i>${escapeHtml(candidate.name)} · ${escapeHtml(candidate.party)}</span>`;
+      }).join('');
+    }
+  }
+
+  function showChartTooltip(event, tooltip, candidate, poll, value, keyboard = false) {
+    if (!tooltip) return;
+    tooltip.innerHTML = `<strong class="block font-display text-lg uppercase text-white">${escapeHtml(candidate.name)} · ${formatNumber(value)}%</strong><span class="mt-1 block text-xs text-slate-300">${escapeHtml(poll.institute)} · ${escapeHtml(poll.publication)}</span><span class="mt-1 block text-xs text-slate-500">${escapeHtml(poll.scenario)} · ${escapeHtml(poll.sample)} · ${escapeHtml(poll.margin)}</span>`;
+    tooltip.classList.remove('hidden');
+    const parent = tooltip.parentElement.getBoundingClientRect();
+    const x = keyboard ? parent.width / 2 : event.clientX - parent.left;
+    const y = keyboard ? 80 : event.clientY - parent.top;
+    tooltip.style.left = `${Math.max(8, Math.min(parent.width - 240, x + 12))}px`;
+    tooltip.style.top = `${Math.max(8, y - 72)}px`;
+  }
+
+  function renderLatestPolls() {
+    const host = $('latestPolls');
+    if (!host) return;
+    const latest = DATA.polls.slice().sort((a, b) => dateValue(b.date) - dateValue(a.date)).slice(0, 7);
+    host.innerHTML = latest.map((poll) => `<button type="button" data-poll-id="${poll.id}" class="grid w-full gap-3 px-4 py-4 text-left transition hover:bg-slate-800/60 sm:grid-cols-[100px_minmax(0,1fr)_auto] sm:items-center">
+      <span class="font-display text-lg font-black text-white">${escapeHtml(poll.publication)}</span>
+      <span class="min-w-0"><strong class="block truncate text-sm text-slate-100">${escapeHtml(poll.institute)}</strong><small class="mt-1 block truncate text-xs text-slate-500">${poll.round}º turno · ${escapeHtml(poll.scenario)} · ${escapeHtml(poll.registry || 'registro não confirmado no catálogo')}</small></span>
+      <span class="flex flex-wrap justify-start gap-1 sm:justify-end">${Object.entries(poll.values).slice(0, 3).map(([id, value]) => `<i class="border border-slate-700 bg-slate-950 px-2 py-1 text-xs not-italic text-slate-300">${escapeHtml(candidateById(id)?.name || id)} ${formatNumber(value)}%</i>`).join('')}</span>
+    </button>`).join('');
+    host.querySelectorAll('[data-poll-id]').forEach((button) => button.addEventListener('click', () => openPollDialog(button.dataset.pollId)));
+  }
+
+  function renderPollTable() {
+    const body = $('pollTableBody');
+    if (!body) return;
+    const polls = DATA.polls.slice().sort((a, b) => dateValue(b.date) - dateValue(a.date) || a.id.localeCompare(b.id));
+    $('pollTableCount').textContent = `${polls.length} cenários publicados`;
+    body.innerHTML = polls.map((poll) => `<tr>
+      <td><strong>${escapeHtml(poll.publication)}</strong></td>
+      <td><span class="table-badge">${poll.round}º turno</span><small>${escapeHtml(poll.scenario)}</small></td>
+      <td>${escapeHtml(poll.institute)}</td><td>${escapeHtml(poll.field)}</td><td>${escapeHtml(poll.sample)}</td><td>${escapeHtml(poll.margin)}</td>
+      <td><span class="${poll.registry ? 'text-emerald-300' : 'text-slate-500'}">${escapeHtml(poll.registry || 'Não confirmado')}</span></td>
+      <td><div class="flex min-w-[260px] flex-wrap gap-1">${Object.entries(poll.values).map(([id, value]) => `<button type="button" data-poll-id="${poll.id}" class="border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-300 hover:border-slate-500">${escapeHtml(candidateById(id)?.name || id)} <b class="text-white">${formatNumber(value)}%</b></button>`).join('')}</div></td>
+      <td><a class="source-link" href="${escapeHtml(poll.source)}" target="_blank" rel="noopener noreferrer">Abrir</a></td>
+    </tr>`).join('');
+    body.querySelectorAll('[data-poll-id]').forEach((button) => button.addEventListener('click', () => openPollDialog(button.dataset.pollId)));
+  }
+
+  function openPollDialog(id) {
+    const poll = pollById(id);
+    const dialog = $('pollDialog');
+    if (!poll || !dialog) return;
