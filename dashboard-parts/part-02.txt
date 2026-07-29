@@ -1,0 +1,90 @@
+        <div class="mb-2 flex items-center justify-between gap-3"><span class="text-[11px] font-bold uppercase tracking-widest text-slate-500">Candidatos visíveis</span><button type="button" id="showAllCandidates" class="text-xs font-bold uppercase tracking-wide text-emerald-400 hover:text-emerald-300">Mostrar todos</button></div>
+        <div class="flex flex-wrap gap-2" id="candidateToggles">${candidates.map((candidate) => `<button type="button" data-candidate="${candidate.id}" class="candidate-toggle ${state.selectedCandidates.has(candidate.id) ? 'is-active' : ''}" style="--candidate-color:${candidate.color}"><i></i>${escapeHtml(candidate.name)}</button>`).join('')}</div>
+      </div>
+      <div class="relative overflow-x-auto bg-slate-950 p-2 sm:p-4">
+        <svg id="pollChart-${options.compact ? 'compact' : 'full'}" class="block min-h-[360px] w-full min-w-[760px]" role="img" aria-label="Gráfico de pesquisas eleitorais"></svg>
+        <div class="pointer-events-none absolute hidden min-w-52 border border-slate-600 bg-slate-950/95 p-3 text-sm shadow-2xl" id="chartTooltip-${options.compact ? 'compact' : 'full'}"></div>
+      </div>
+      <div id="chartLegend-${options.compact ? 'compact' : 'full'}" class="flex flex-wrap gap-2 border-t border-slate-800 bg-slate-900 px-3 py-3"></div>
+      <div class="grid gap-3 border-t border-slate-800 bg-slate-950 p-3 md:grid-cols-[1fr_auto] md:items-center">
+        <p class="text-xs leading-relaxed text-slate-500">As linhas apenas conectam resultados do mesmo candidato ao longo do tempo. Não representam média, projeção ou tendência estatística ponderada.</p>
+        <button type="button" id="openLatestPoll" class="control-button">Abrir último levantamento</button>
+      </div>
+    </article>`;
+
+    bindExplorerControls(host, options);
+    drawPollChart(host.querySelector('svg'), host.querySelector('[id^="chartTooltip"]'), host.querySelector('[id^="chartLegend"]'));
+  }
+
+  function bindExplorerControls(host, options) {
+    host.querySelectorAll('[data-round]').forEach((button) => button.addEventListener('click', () => {
+      state.round = Number(button.dataset.round);
+      state.institute = 'all';
+      if (state.round === 2) {
+        const available = DATA.polls.find((poll) => poll.round === 2)?.matchup;
+        if (!DATA.polls.some((poll) => poll.round === 2 && poll.matchup === state.matchup)) state.matchup = available;
+      }
+      refreshPollViews();
+    }));
+
+    host.querySelector('#instituteFilter')?.addEventListener('change', (event) => {
+      state.institute = event.target.value;
+      refreshPollViews();
+    });
+
+    host.querySelector('#matchupFilter')?.addEventListener('change', (event) => {
+      state.matchup = event.target.value;
+      state.institute = 'all';
+      refreshPollViews();
+    });
+
+    host.querySelectorAll('[data-candidate]').forEach((button) => button.addEventListener('click', () => {
+      const id = button.dataset.candidate;
+      if (state.selectedCandidates.has(id)) state.selectedCandidates.delete(id);
+      else state.selectedCandidates.add(id);
+      if (!state.selectedCandidates.size) state.selectedCandidates.add(id);
+      refreshPollViews();
+    }));
+
+    host.querySelector('#showAllCandidates')?.addEventListener('click', () => {
+      currentPolls().flatMap((poll) => Object.keys(poll.values)).forEach((id) => state.selectedCandidates.add(id));
+      refreshPollViews();
+    });
+
+    host.querySelector('#openLatestPoll')?.addEventListener('click', () => {
+      const latest = currentPolls().at(-1);
+      if (latest) openPollDialog(latest.id);
+    });
+  }
+
+  function refreshPollViews() {
+    if (state.view === 'overview') renderOverview();
+    if (state.view === 'president') renderPresident();
+  }
+
+  function drawPollChart(svg, tooltip, legend) {
+    if (!svg) return;
+    const polls = currentPolls();
+    const candidateIds = visibleCandidateIds(polls);
+    const width = Math.max(900, polls.length * 76 + 140);
+    const height = 470;
+    const pad = { left: 54, right: 38, top: 30, bottom: 92 };
+    const plotW = width - pad.left - pad.right;
+    const plotH = height - pad.top - pad.bottom;
+    const maxY = 60;
+    const x = (index) => pad.left + (polls.length <= 1 ? plotW / 2 : index / (polls.length - 1) * plotW);
+    const y = (value) => pad.top + plotH - (Number(value) / maxY) * plotH;
+
+    svg.replaceChildren();
+    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+    for (let value = 0; value <= maxY; value += 10) {
+      const yy = y(value);
+      svg.appendChild(svgEl('line', { x1: pad.left, y1: yy, x2: width - pad.right, y2: yy, class: 'chart-grid-line' }));
+      svg.appendChild(svgEl('text', { x: pad.left - 9, y: yy + 4, class: 'chart-axis-label', 'text-anchor': 'end' }, `${value}%`));
+    }
+
+    polls.forEach((poll, index) => {
+      const xx = x(index);
+      svg.appendChild(svgEl('line', { x1: xx, y1: pad.top, x2: xx, y2: pad.top + plotH, class: 'chart-event-line' }));
+      const dateText = svgEl('text', { x: xx, y: height - 55, class: 'chart-date-label', 'text-anchor': 'middle' }, formatDate(poll.date).toUpperCase());
