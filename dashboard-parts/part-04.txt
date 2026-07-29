@@ -5,11 +5,12 @@
       ].map(([label, value]) => `<div class="border border-slate-800 bg-slate-900 p-3"><span class="text-[10px] font-bold uppercase tracking-widest text-slate-500">${label}</span><strong class="mt-1 block text-sm text-white">${escapeHtml(value)}</strong></div>`).join('')}</div>
       <div class="grid gap-2 sm:grid-cols-2">${Object.entries(poll.values).sort((a, b) => b[1] - a[1]).map(([candidateId, value], index) => {
         const candidate = candidateById(candidateId);
-        return `<div class="grid grid-cols-[42px_minmax(0,1fr)_auto] items-center gap-3 border border-slate-800 bg-slate-900 p-3"><span class="grid h-10 w-10 place-items-center font-display font-black text-white" style="background:${candidate?.color || '#475569'}">${index + 1}</span><span><strong class="block text-sm text-white">${escapeHtml(candidate?.name || candidateId)}</strong><small class="text-xs text-slate-500">${escapeHtml(candidate?.party || '')}</small></span><b class="font-display text-3xl text-white">${formatNumber(value)}%</b></div>`;
+        return `<div class="poll-dialog-candidate" style="--candidate-color:${candidate?.color || '#475569'}"><span class="candidate-rank-badge">${index + 1}</span>${candidatePhotoMarkup(candidate, 'lg')}<span class="min-w-0"><strong>${escapeHtml(candidate?.name || candidateId)}</strong><small>${escapeHtml(candidate?.party || '')}</small></span><b>${formatNumber(value)}%</b></div>`;
       }).join('')}</div>
       <div class="border-l-4 border-amber-400 bg-amber-400/10 p-3 text-sm text-amber-100">Este resultado pertence exclusivamente ao cenário indicado. Não foi combinado com outro levantamento.</div>
       <a class="inline-flex min-h-11 items-center justify-center bg-emerald-500 px-5 py-3 text-sm font-black uppercase tracking-wide text-slate-950 hover:bg-emerald-400" href="${escapeHtml(poll.source)}" target="_blank" rel="noopener noreferrer">Abrir fonte publicada</a>
     </div>`;
+    bindPhotoFallbacks($('dialogBody'));
     dialog.showModal();
   }
 
