@@ -1,3 +1,23 @@
+const PORTRAIT_TITLES = new Map([
+  ['ratinho junior', 'Ratinho Júnior'],
+  ['tarcisio de freitas', 'Tarcísio de Freitas'],
+  ['aecio neves', 'Aécio Neves'],
+  ['samara martins', 'File:2022 SAMARA MARTINS CANDIDATO VICE-PRESIDENTE TSE (280001602703).jpg'],
+  ['joaquim barbosa', 'Joaquim Barbosa'],
+  ['rui costa pimenta', 'Rui Costa Pimenta'],
+  ['michelle bolsonaro', 'Michelle Bolsonaro'],
+  ['jair bolsonaro', 'Jair Bolsonaro']
+]);
+
+function normalizeName(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
 function initialsSvg(name) {
   const safeName = String(name || 'Candidato').trim();
   const initials = safeName
@@ -32,7 +52,8 @@ function sendFallback(res, name) {
 
 module.exports = async function handler(req, res) {
   const name = String(req.query.name || 'Candidato');
-  const title = String(req.query.wiki || name).trim();
+  const requestedTitle = String(req.query.wiki || '').trim();
+  const title = requestedTitle || PORTRAIT_TITLES.get(normalizeName(name)) || name.trim();
 
   try {
     const params = new URLSearchParams({
