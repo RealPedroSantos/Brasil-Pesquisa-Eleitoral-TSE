@@ -1,9 +1,16 @@
         <div class="mb-2 flex items-center justify-between gap-3"><span class="text-[11px] font-bold uppercase tracking-widest text-slate-500">Candidatos visíveis</span><button type="button" id="showAllCandidates" class="text-xs font-bold uppercase tracking-wide text-emerald-400 hover:text-emerald-300">Mostrar todos</button></div>
-        <div class="flex flex-wrap gap-2" id="candidateToggles">${candidates.map((candidate) => `<button type="button" data-candidate="${candidate.id}" class="candidate-toggle ${state.selectedCandidates.has(candidate.id) ? 'is-active' : ''}" style="--candidate-color:${candidate.color}"><i></i>${escapeHtml(candidate.name)}</button>`).join('')}</div>
+        <div class="candidate-photo-grid" id="candidateToggles">${candidates.map((candidate) => `<button type="button" data-candidate="${candidate.id}" class="candidate-photo-card ${state.selectedCandidates.has(candidate.id) ? 'is-active' : ''}" style="--candidate-color:${candidate.color}">
+          ${candidatePhotoMarkup(candidate, 'md')}
+          <span class="min-w-0 text-left"><strong>${escapeHtml(candidate.name)}</strong><small>${escapeHtml(candidate.party)}</small></span>
+          <i aria-hidden="true"></i>
+        </button>`).join('')}</div>
       </div>
-      <div class="relative overflow-x-auto bg-slate-950 p-2 sm:p-4">
-        <svg id="pollChart-${options.compact ? 'compact' : 'full'}" class="block min-h-[360px] w-full min-w-[760px]" role="img" aria-label="Gráfico de pesquisas eleitorais"></svg>
-        <div class="pointer-events-none absolute hidden min-w-52 border border-slate-600 bg-slate-950/95 p-3 text-sm shadow-2xl" id="chartTooltip-${options.compact ? 'compact' : 'full'}"></div>
+      <div class="chart-layout">
+        <div class="relative overflow-x-auto bg-slate-950 p-2 sm:p-4">
+          <svg id="pollChart-${options.compact ? 'compact' : 'full'}" class="block min-h-[420px] w-full min-w-[840px]" role="img" aria-label="Gráfico de pesquisas eleitorais"></svg>
+          <div class="pointer-events-none absolute hidden min-w-60 border border-slate-600 bg-slate-950/95 p-3 text-sm shadow-2xl" id="chartTooltip-${options.compact ? 'compact' : 'full'}"></div>
+        </div>
+        <aside id="chartRanking-${options.compact ? 'compact' : 'full'}" class="chart-ranking" aria-label="Ranking mais recente dos candidatos"></aside>
       </div>
       <div id="chartLegend-${options.compact ? 'compact' : 'full'}" class="flex flex-wrap gap-2 border-t border-slate-800 bg-slate-900 px-3 py-3"></div>
       <div class="grid gap-3 border-t border-slate-800 bg-slate-950 p-3 md:grid-cols-[1fr_auto] md:items-center">
@@ -13,7 +20,8 @@
     </article>`;
 
     bindExplorerControls(host, options);
-    drawPollChart(host.querySelector('svg'), host.querySelector('[id^="chartTooltip"]'), host.querySelector('[id^="chartLegend"]'));
+    bindPhotoFallbacks(host);
+    drawPollChart(host.querySelector('svg'), host.querySelector('[id^="chartTooltip"]'), host.querySelector('[id^="chartLegend"]'), host.querySelector('[id^="chartRanking"]'));
   }
 
   function bindExplorerControls(host, options) {
@@ -62,13 +70,13 @@
     if (state.view === 'president') renderPresident();
   }
 
-  function drawPollChart(svg, tooltip, legend) {
+  function drawPollChart(svg, tooltip, legend, ranking) {
     if (!svg) return;
     const polls = currentPolls();
     const candidateIds = visibleCandidateIds(polls);
-    const width = Math.max(900, polls.length * 76 + 140);
-    const height = 470;
-    const pad = { left: 54, right: 38, top: 30, bottom: 92 };
+    const width = Math.max(960, polls.length * 76 + 170);
+    const height = candidateIds.length > 10 ? 560 : 500;
+    const pad = { left: 58, right: 52, top: 42, bottom: 92 };
     const plotW = width - pad.left - pad.right;
     const plotH = height - pad.top - pad.bottom;
     const maxY = 60;
@@ -77,6 +85,8 @@
 
     svg.replaceChildren();
     svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    const defs = svgEl('defs');
+    svg.appendChild(defs);
 
     for (let value = 0; value <= maxY; value += 10) {
       const yy = y(value);
