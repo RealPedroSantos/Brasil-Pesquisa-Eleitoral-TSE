@@ -1,0 +1,311 @@
+
+  const extendedPartyColors = {
+    PL: '#1d4ed8', PT: '#dc2626', PSOL: '#7e22ce', 'MISSÃO': '#111827', Novo: '#f97316',
+    PSB: '#e11d48', PCdoB: '#b91c1c', PDT: '#0f766e', União: '#2563eb', PSDB: '#0891b2',
+    PSD: '#334155', MDB: '#16a34a', Republicanos: '#0f766e', PP: '#1e40af', Rede: '#0d9488',
+    Podemos: '#2563eb', Avante: '#f59e0b', Solidariedade: '#f97316', PSTU: '#be123c', UP: '#991b1b',
+    PCB: '#7f1d1d', Outros: '#94a3b8'
+  };
+
+  const extendedOfficeDefinitions = {
+    governors: {
+      office: 'Governador', eyebrow: 'Executivo estadual', title: 'Governadores',
+      description: 'Pesquisas estaduais publicadas, com fotos, percentuais, campo, amostra, margem e registro.',
+      monitored: [],
+      polls: [
+        {
+          id: 'governor-sp-datafolha-2026-07-05', uf: 'SP', stateName: 'São Paulo', institute: 'Datafolha', publication: '05/07/2026',
+          field: '1 a 3/07/2026', sample: '1.608', margin: '±2 p.p.', registry: 'SP-01703/2026 · BR-06481/2026',
+          source: 'https://www1.folha.uol.com.br/poder/2026/07/datafolha-tarcisio-lidera-em-sp-com-46-e-haddad-tem-30.shtml',
+          candidates: [
+            { name: 'Tarcísio de Freitas', party: 'Republicanos', value: 46, wiki: 'Tarcísio de Freitas' },
+            { name: 'Fernando Haddad', party: 'PT', value: 30, wiki: 'Fernando Haddad' },
+            { name: 'Vera Lúcia', party: 'PSTU', value: 5, wiki: 'Vera Lúcia Salgado' },
+            { name: 'Vivian Mendes', party: 'UP', value: 4, wiki: 'Vivian Mendes' },
+            { name: 'Carlos Machado', party: 'PCB', value: 4, wiki: 'Carlos Machado político PCB' }
+          ]
+        },
+        {
+          id: 'governor-rj-realtime-2026-07-28', uf: 'RJ', stateName: 'Rio de Janeiro', institute: 'Real Time Big Data', publication: '28/07/2026',
+          field: '23 a 27/07/2026', sample: '2.000', margin: '±2 p.p.', registry: 'RJ-03487/2026',
+          source: 'https://noticias.uol.com.br/politica/ultimas-noticias/2026/07/28/pesquisa-realtime-big-data-no-rj-paes-tem-37-no-estado-e-48-na-capital.ghtm',
+          candidates: [
+            { name: 'Eduardo Paes', party: 'PSD', value: 37, wiki: 'Eduardo Paes' },
+            { name: 'Douglas Ruas', party: 'PL', value: 16, wiki: 'Douglas Ruas' },
+            { name: 'Anthony Garotinho', party: 'Republicanos', value: 12, wiki: 'Anthony Garotinho' },
+            { name: 'William Siri', party: 'PSOL', value: 3, wiki: 'William Siri' },
+            { name: 'André Marinho', party: 'Novo', value: 2, wiki: 'André Marinho político' },
+            { name: 'Coronel Busnello', party: 'MISSÃO', value: 2, wiki: 'Coronel Busnello' },
+            { name: 'Cyro Garcia', party: 'PSTU', value: 1, wiki: 'Cyro Garcia' },
+            { name: 'Juliete Pantoja', party: 'UP', value: 1, wiki: 'Juliete Pantoja' }
+          ]
+        }
+      ]
+    },
+    senate: {
+      office: 'Senador', eyebrow: 'Legislativo federal', title: 'Senado',
+      description: 'Disputas estaduais para duas vagas por unidade da Federação e simulação partidária das 54 cadeiras em disputa.',
+      monitored: [],
+      polls: [
+        {
+          id: 'senate-sp-datafolha-2026-07-07', uf: 'SP', stateName: 'São Paulo', institute: 'Datafolha', publication: '07/07/2026',
+          field: '1 a 3/07/2026', sample: '1.608', margin: '±2 p.p.', registry: 'SP-01703/2026 · BR-06481/2026',
+          source: 'https://noticias.uol.com.br/ultimas-noticias/agencia-estado/2026/07/07/datafolha-marina-tem-18-tebet-soma-16-e-salles-registra-13-na-disputa-ao-senado-em-sp.htm',
+          candidates: [
+            { name: 'Marina Silva', party: 'Rede', value: 18, wiki: 'Marina Silva' },
+            { name: 'Simone Tebet', party: 'PSB', value: 16, wiki: 'Simone Tebet' },
+            { name: 'Ricardo Salles', party: 'Novo', value: 13, wiki: 'Ricardo Salles' },
+            { name: 'André do Prado', party: 'PL', value: 11, wiki: 'André do Prado' },
+            { name: 'Guilherme Derrite', party: 'PP', value: 10, wiki: 'Guilherme Derrite' },
+            { name: 'Paulinho da Força', party: 'Solidariedade', value: 8, wiki: 'Paulinho da Força' }
+          ]
+        }
+      ]
+    },
+    chamber: {
+      office: 'Deputado Federal', eyebrow: 'Legislativo federal', title: 'Câmara Federal',
+      description: 'Cobertura nominal será exibida quando houver pesquisa publicada e verificável. A simulação partidária é indicativa, não uma previsão de bancada.',
+      polls: [],
+      monitored: [
+        { name: 'Nikolas Ferreira', party: 'PL', uf: 'MG', wiki: 'Nikolas Ferreira' },
+        { name: 'Erika Hilton', party: 'PSOL', uf: 'SP', wiki: 'Erika Hilton' },
+        { name: 'Tabata Amaral', party: 'PSB', uf: 'SP', wiki: 'Tabata Amaral' },
+        { name: 'Sóstenes Cavalcante', party: 'PL', uf: 'RJ', wiki: 'Sóstenes Cavalcante' },
+        { name: 'Gleisi Hoffmann', party: 'PT', uf: 'PR', wiki: 'Gleisi Hoffmann' },
+        { name: 'Marcel van Hattem', party: 'Novo', uf: 'RS', wiki: 'Marcel van Hattem' }
+      ]
+    },
+    assemblies: {
+      office: 'Deputado Estadual', eyebrow: 'Legislativo estadual', title: 'Assembleias Legislativas',
+      description: 'Perfis públicos em acompanhamento. Percentuais nominais só serão mostrados após publicação verificável de pesquisa para deputado estadual.',
+      polls: [],
+      monitored: [
+        { name: 'Lucas Bove', party: 'PL', uf: 'SP', wiki: 'Lucas Bove' },
+        { name: 'Emídio de Souza', party: 'PT', uf: 'SP', wiki: 'Emídio de Souza' },
+        { name: 'Marina Helou', party: 'Rede', uf: 'SP', wiki: 'Marina Helou' },
+        { name: 'Bruno Engler', party: 'PL', uf: 'MG', wiki: 'Bruno Engler' },
+        { name: 'Bella Gonçalves', party: 'PSOL', uf: 'MG', wiki: 'Bella Gonçalves' },
+        { name: 'Tadeu Martins Leite', party: 'MDB', uf: 'MG', wiki: 'Tadeu Martins Leite' }
+      ]
+    },
+    district: {
+      office: 'Deputado Distrital', eyebrow: 'Câmara Legislativa do DF', title: 'Deputados Distritais',
+      description: 'Perfis públicos do Distrito Federal em acompanhamento. Sem percentual enquanto não houver pesquisa nominal verificável.',
+      polls: [],
+      monitored: [
+        { name: 'Fábio Félix', party: 'PSOL', uf: 'DF', wiki: 'Fábio Félix' },
+        { name: 'Chico Vigilante', party: 'PT', uf: 'DF', wiki: 'Chico Vigilante' },
+        { name: 'Paula Belmonte', party: 'Cidadania', uf: 'DF', wiki: 'Paula Belmonte' },
+        { name: 'Thiago Manzoni', party: 'PL', uf: 'DF', wiki: 'Thiago Manzoni' },
+        { name: 'Roosevelt Vilela', party: 'PL', uf: 'DF', wiki: 'Roosevelt Vilela' },
+        { name: 'Gabriel Magno', party: 'PT', uf: 'DF', wiki: 'Gabriel Magno' }
+      ]
+    }
+  };
+
+  const extendedSeatModels = {
+    chamber: {
+      title: 'Simulação indicativa da Câmara', total: 513, contestedLabel: '513 vagas',
+      basis: 'Preferência partidária nacional — AtlasIntel/Arko, março de 2026',
+      source: 'https://www.infomoney.com.br/politica/atlasintel-pt-e-pl-sao-os-partidos-favoritos-dos-eleitores-e-reforcam-polarizacao/',
+      note: '“Nenhum partido” foi excluído e as preferências declaradas foram redistribuídas proporcionalmente. O modelo não reproduz os 27 distritos estaduais, quociente eleitoral, federações, cláusula de desempenho nem votação nominal.',
+      parties: [
+        { party: 'PL', seats: 181 }, { party: 'PT', seats: 170 }, { party: 'PSOL', seats: 56 },
+        { party: 'MISSÃO', seats: 40 }, { party: 'Novo', seats: 26 }, { party: 'PSB', seats: 10 },
+        { party: 'PCdoB', seats: 6 }, { party: 'PDT', seats: 5 }, { party: 'União', seats: 5 },
+        { party: 'PSDB', seats: 3 }, { party: 'PSD', seats: 1 }, { party: 'MDB', seats: 1 }, { party: 'Outros', seats: 9 }
+      ]
+    },
+    senate: {
+      title: 'Simulação das 54 vagas do Senado', total: 54, contestedLabel: '54 vagas em disputa',
+      basis: 'Distribuição proporcional dos 64 nomes competitivos identificados pela EXAME nas pesquisas estaduais',
+      source: 'https://exame.com/brasil/pl-e-mdb-concentram-mais-pre-candidatos-competitivos-ao-senado/',
+      note: 'Modelo de competitividade, não previsão eleitoral. Cada estado e o DF elegem dois senadores; a soma nacional depende de 27 disputas majoritárias independentes. As 27 cadeiras eleitas em 2022 não entram neste gráfico.',
+      parties: [
+        { party: 'PL', seats: 10 }, { party: 'MDB', seats: 8 }, { party: 'PT', seats: 6 },
+        { party: 'PSD', seats: 5 }, { party: 'Republicanos', seats: 4 }, { party: 'União', seats: 3 },
+        { party: 'PP', seats: 3 }, { party: 'PSB', seats: 3 }, { party: 'Rede', seats: 2 },
+        { party: 'Podemos', seats: 2 }, { party: 'PSDB', seats: 2 }, { party: 'PDT', seats: 2 },
+        { party: 'Novo', seats: 2 }, { party: 'Avante', seats: 1 }, { party: 'PSOL', seats: 1 }
+      ]
+    }
+  };
+
+  function extendedColor(party) {
+    return extendedPartyColors[party] || '#64748b';
+  }
+
+  function extendedPerson(person) {
+    const wiki = person.wiki || person.name;
+    return {
+      ...person,
+      color: extendedColor(person.party),
+      photo: `/api/public-figure-photo?name=${encodeURIComponent(person.name)}&wiki=${encodeURIComponent(wiki)}`
+    };
+  }
+
+  function extendedHemicycleSvg(model) {
+    const rows = model.total > 100 ? 13 : 6;
+    const weights = Array.from({ length: rows }, (_, index) => index + 5);
+    const weightTotal = weights.reduce((sum, value) => sum + value, 0);
+    const counts = weights.map((weight) => Math.floor((model.total * weight) / weightTotal));
+    let missing = model.total - counts.reduce((sum, value) => sum + value, 0);
+    for (let index = counts.length - 1; missing > 0; index = (index - 1 + counts.length) % counts.length) {
+      counts[index] += 1;
+      missing -= 1;
+    }
+
+    const positions = [];
+    const minRadius = model.total > 100 ? 118 : 145;
+    const maxRadius = 430;
+    counts.forEach((count, row) => {
+      const radius = rows === 1 ? maxRadius : minRadius + ((maxRadius - minRadius) * row) / (rows - 1);
+      for (let index = 0; index < count; index += 1) {
+        const angle = count === 1 ? Math.PI / 2 : Math.PI - (Math.PI * index) / (count - 1);
+        positions.push({ angle, radius, x: 500 + radius * Math.cos(angle), y: 472 - radius * Math.sin(angle) });
+      }
+    });
+    positions.sort((a, b) => b.angle - a.angle || b.radius - a.radius);
+
+    const seats = model.parties.flatMap((item) => Array.from({ length: item.seats }, () => item));
+    const circleRadius = model.total > 100 ? 4.5 : 8.5;
+    const circles = positions.map((position, index) => {
+      const item = seats[index] || { party: 'Outros' };
+      return `<circle cx="${position.x.toFixed(2)}" cy="${position.y.toFixed(2)}" r="${circleRadius}" fill="${extendedColor(item.party)}"><title>${escapeHtml(item.party)}</title></circle>`;
+    }).join('');
+
+    return `<svg class="h-auto w-full" viewBox="0 0 1000 500" role="img" aria-label="${escapeHtml(model.title)} com ${model.total} cadeiras distribuídas por partido">${circles}</svg>`;
+  }
+
+  function extendedSeatSimulationMarkup(kind, compact = false) {
+    const model = extendedSeatModels[kind];
+    if (!model) return '';
+    const maxSeats = Math.max(...model.parties.map((item) => item.seats));
+    return `<section class="border border-slate-200 bg-white" data-seat-simulation="${kind}">
+      <div class="flex flex-col gap-3 border-b border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <span class="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Simulação metodológica</span>
+          <h3 class="mt-1 font-display text-2xl font-black uppercase text-slate-950">${escapeHtml(model.title)}</h3>
+          <p class="mt-1 text-sm text-slate-600">${escapeHtml(model.basis)}</p>
+        </div>
+        <span class="border border-emerald-600 bg-emerald-50 px-3 py-2 font-display text-lg font-black uppercase text-emerald-900">${escapeHtml(model.contestedLabel)}</span>
+      </div>
+      <div class="grid gap-5 p-4 ${compact ? '' : 'xl:grid-cols-[1.2fr_.8fr]'}">
+        <div>
+          ${extendedHemicycleSvg(model)}
+          <div class="mt-3 flex flex-wrap gap-2">${model.parties.map((item) => `<span class="inline-flex items-center gap-2 border border-slate-200 bg-white px-2 py-1 text-xs font-bold text-slate-700"><i class="h-3 w-3" style="background:${extendedColor(item.party)}"></i>${escapeHtml(item.party)} <b class="text-slate-950">${item.seats}</b></span>`).join('')}</div>
+        </div>
+        <div class="space-y-2">${model.parties.map((item) => `<div class="grid grid-cols-[minmax(76px,auto)_1fr_42px] items-center gap-2 text-sm">
+          <strong class="truncate text-slate-800">${escapeHtml(item.party)}</strong>
+          <span class="h-2.5 overflow-hidden bg-slate-100"><i class="block h-full" style="width:${(item.seats / maxSeats) * 100}%;background:${extendedColor(item.party)}"></i></span>
+          <b class="text-right font-display text-lg text-slate-950">${item.seats}</b>
+        </div>`).join('')}</div>
+      </div>
+      <div class="border-t border-amber-200 bg-amber-50 p-4 text-sm leading-relaxed text-amber-950">
+        <strong class="block uppercase tracking-wide">Limite do modelo</strong>
+        <p class="mt-1">${escapeHtml(model.note)}</p>
+        <a class="mt-3 inline-flex min-h-10 items-center border border-amber-600 bg-white px-3 font-bold uppercase text-amber-900" href="${escapeHtml(model.source)}" target="_blank" rel="noopener noreferrer">Abrir fonte da base</a>
+      </div>
+    </section>`;
+  }
+
+  function extendedCandidateResultCard(candidate, rank) {
+    const person = extendedPerson(candidate);
+    return `<article class="relative grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border border-slate-200 border-l-4 bg-white p-3" style="border-left-color:${person.color}">
+      <span class="absolute left-1 top-1 grid h-5 min-w-5 place-items-center bg-slate-950 px-1 font-display text-xs font-black text-white">${rank}</span>
+      ${candidatePhotoMarkup(person, 'lg')}
+      <span class="min-w-0"><strong class="block truncate text-sm text-slate-950">${escapeHtml(person.name)}</strong><small class="mt-1 block text-xs font-bold uppercase tracking-wide text-slate-500">${escapeHtml(person.party)}</small></span>
+      <b class="font-display text-3xl font-black text-slate-950">${formatNumber(person.value)}%</b>
+    </article>`;
+  }
+
+  function extendedMonitoredCard(profile) {
+    const person = extendedPerson(profile);
+    return `<article class="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3 border border-slate-200 border-l-4 bg-white p-3" style="border-left-color:${person.color}">
+      ${candidatePhotoMarkup(person, 'lg')}
+      <span class="min-w-0"><strong class="block truncate text-sm text-slate-950">${escapeHtml(person.name)}</strong><small class="mt-1 block text-xs font-bold uppercase tracking-wide text-slate-500">${escapeHtml(person.party)} · ${escapeHtml(person.uf)}</small><em class="mt-2 block text-xs not-italic text-slate-500">Perfil público monitorado · sem pesquisa nominal verificável</em></span>
+    </article>`;
+  }
+
+  function extendedPollMarkup(poll) {
+    return `<article class="border border-slate-200 bg-white" data-office-poll="${escapeHtml(poll.id)}">
+      <div class="flex flex-col gap-3 border-b border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div><span class="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">${escapeHtml(poll.uf)} · ${escapeHtml(poll.stateName)}</span><h3 class="mt-1 font-display text-2xl font-black uppercase text-slate-950">${escapeHtml(poll.institute)}</h3></div>
+        <div class="text-left text-xs text-slate-600 sm:text-right"><strong class="block text-sm text-slate-900">Publicada em ${escapeHtml(poll.publication)}</strong><span>${escapeHtml(poll.field)} · ${escapeHtml(poll.sample)} entrevistas · ${escapeHtml(poll.margin)}</span><small class="mt-1 block">${escapeHtml(poll.registry)}</small></div>
+      </div>
+      <div class="grid gap-2 p-4 sm:grid-cols-2 xl:grid-cols-3">${poll.candidates.map((candidate, index) => extendedCandidateResultCard(candidate, index + 1)).join('')}</div>
+      <div class="flex flex-col gap-2 border-t border-slate-200 p-4 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between"><span>Percentuais reproduzidos individualmente; ausência em outro cenário não é convertida em zero.</span><a class="source-link" href="${escapeHtml(poll.source)}" target="_blank" rel="noopener noreferrer">Abrir publicação</a></div>
+    </article>`;
+  }
+
+  function extendedOfficeSectionMarkup(viewId, compact = false) {
+    const definition = extendedOfficeDefinitions[viewId];
+    if (!definition) return '';
+    const seatKind = viewId === 'senate' ? 'senate' : viewId === 'chamber' ? 'chamber' : null;
+    const publishedCount = definition.polls.reduce((sum, poll) => sum + poll.candidates.length, 0);
+    return `<section class="space-y-4 scroll-mt-24" data-overview-office="${viewId}">
+      <header class="border-t-4 border-emerald-500 bg-white p-4 sm:p-5">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div><span class="text-xs font-black uppercase tracking-[0.2em] text-emerald-700">${escapeHtml(definition.eyebrow)}</span><h2 class="mt-1 font-display text-3xl font-black uppercase text-slate-950 sm:text-4xl">${escapeHtml(definition.title)}</h2><p class="mt-2 max-w-3xl text-sm leading-relaxed text-slate-600">${escapeHtml(definition.description)}</p></div>
+          <div class="flex flex-wrap gap-2"><span class="status-chip"><i class="bg-emerald-500"></i>${definition.polls.length} pesquisa${definition.polls.length === 1 ? '' : 's'} publicada${definition.polls.length === 1 ? '' : 's'}</span><span class="status-chip"><i class="bg-blue-500"></i>${publishedCount || definition.monitored.length} perfis com foto</span><button type="button" class="control-button" data-extended-office-view="${viewId}">Abrir página completa</button></div>
+        </div>
+      </header>
+      ${definition.polls.map(extendedPollMarkup).join('')}
+      ${definition.monitored.length ? `<section class="border border-slate-200 bg-white"><div class="border-b border-slate-200 bg-slate-50 p-4"><span class="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Sem percentual atribuído</span><h3 class="mt-1 font-display text-xl font-black uppercase text-slate-950">Perfis públicos em acompanhamento</h3><p class="mt-1 text-sm text-slate-600">A presença abaixo não confirma candidatura registrada. Os cards servem para preparar a cobertura visual enquanto resultados nominais verificáveis não são publicados.</p></div><div class="grid gap-2 p-4 sm:grid-cols-2 xl:grid-cols-3">${definition.monitored.map(extendedMonitoredCard).join('')}</div></section>` : ''}
+      ${seatKind ? extendedSeatSimulationMarkup(seatKind, compact) : ''}
+    </section>`;
+  }
+
+  function bindExtendedOfficeControls(root = document) {
+    bindPhotoFallbacks(root);
+    qsa('[data-extended-office-view]', root).forEach((button) => {
+      if (button.dataset.extendedBound === '1') return;
+      button.dataset.extendedBound = '1';
+      button.addEventListener('click', () => showView(button.dataset.extendedOfficeView));
+    });
+    qsa('[data-overview-jump]', root).forEach((button) => {
+      if (button.dataset.extendedBound === '1') return;
+      button.dataset.extendedBound = '1';
+      button.addEventListener('click', () => document.querySelector(`[data-overview-office="${button.dataset.overviewJump}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    });
+  }
+
+  const extendedOriginalRenderOverview = renderOverview;
+  const extendedOriginalRenderOfficeView = renderOfficeView;
+
+  renderOverview = function renderExtendedOverview() {
+    extendedOriginalRenderOverview();
+    const host = $('overview');
+    if (!host) return;
+    const continuation = document.createElement('div');
+    continuation.className = 'space-y-10 pt-2';
+    continuation.setAttribute('data-overview-continuation', 'true');
+    continuation.innerHTML = `<nav class="sticky top-[69px] z-30 flex gap-1 overflow-x-auto border-y border-slate-200 bg-white/95 p-2 backdrop-blur" aria-label="Categorias na visão geral">
+      ${Object.entries(extendedOfficeDefinitions).map(([id, definition]) => `<button type="button" class="control-button shrink-0" data-overview-jump="${id}">${escapeHtml(definition.title)}</button>`).join('')}
+    </nav>
+    <section class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      ${Object.entries(extendedOfficeDefinitions).map(([id, definition]) => `<button type="button" class="border border-slate-200 border-t-4 bg-white p-4 text-left transition hover:bg-slate-50" style="border-top-color:#10b981" data-overview-jump="${id}"><span class="text-xs font-black uppercase tracking-[0.16em] text-slate-500">${escapeHtml(definition.eyebrow)}</span><strong class="mt-2 block font-display text-2xl uppercase text-slate-950">${escapeHtml(definition.title)}</strong><small class="mt-2 block text-sm text-slate-600">${definition.polls.length ? `${definition.polls.length} pesquisa(s) publicada(s)` : `${definition.monitored.length} perfis visuais em acompanhamento`}</small></button>`).join('')}
+    </section>
+    ${extendedOfficeSectionMarkup('governors', true)}
+    ${extendedOfficeSectionMarkup('senate', true)}
+    ${extendedOfficeSectionMarkup('chamber', true)}
+    ${extendedOfficeSectionMarkup('assemblies', true)}
+    ${extendedOfficeSectionMarkup('district', true)}
+    <section class="border border-slate-200 bg-slate-50 p-5 text-sm leading-relaxed text-slate-700"><strong class="font-display text-xl uppercase text-slate-950">Critério editorial</strong><p class="mt-2">Fotos não substituem resultados. Percentuais aparecem apenas com publicação verificável; simulações de cadeiras são modelos separados e identificados; registros no TSE continuam disponíveis na página própria.</p></section>`;
+    host.appendChild(continuation);
+    bindExtendedOfficeControls(continuation);
+  };
+
+  renderOfficeView = function renderExtendedOfficeView(viewId, office) {
+    const view = $(viewId);
+    const definition = extendedOfficeDefinitions[viewId];
+    if (!view || !definition) return extendedOriginalRenderOfficeView(viewId, office);
+    const rows = state.registry.filter((row) => String(row.office || '').toLowerCase() === String(office || definition.office).toLowerCase());
+    const states = unique(rows.map((row) => row.uf));
+    const institutes = unique(rows.map((row) => row.institute));
+    view.innerHTML = `${headerMarkup(definition.eyebrow, definition.title, definition.description, `<span class="status-chip"><i class="bg-emerald-500"></i>${rows.length} registros TSE</span>`)}
+      <div class="grid gap-3 sm:grid-cols-3">${kpiMarkup('Registros oficiais', rows.length, 'Cadastros localizados no endpoint do TSE', 'emerald')}${kpiMarkup('UFs cobertas', states.length, 'Unidades com pesquisa registrada', 'blue')}${kpiMarkup('Institutos', institutes.length, 'Empresas identificadas nos registros', 'red')}</div>
+      ${extendedOfficeSectionMarkup(viewId, false)}
+      <section class="news-card"><div class="news-card-heading"><div><span>Camada oficial</span><strong>Registros recentes no TSE</strong></div><small>${rows.length} registros</small></div>${registryTableMarkup(rows.slice(0, 50))}</section>`;
+    bindExtendedOfficeControls(view);
+  };
