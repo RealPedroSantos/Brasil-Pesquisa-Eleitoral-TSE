@@ -1,0 +1,90 @@
+    $('dialogBody').innerHTML = `<div class="space-y-5">
+      <div><span class="font-display text-sm font-black uppercase tracking-widest text-emerald-400">${poll.round}º turno · ${escapeHtml(poll.scenario)}</span><h2 class="mt-2 font-display text-4xl font-black uppercase text-white">${escapeHtml(poll.institute)}</h2><p class="mt-2 text-sm text-slate-400">Publicada em ${escapeHtml(poll.publication)} · campo ${escapeHtml(poll.field)}</p></div>
+      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">${[
+        ['Amostra', poll.sample], ['Margem', poll.margin], ['Registro', poll.registry || 'Não confirmado'], ['Abrangência', poll.scope]
+      ].map(([label, value]) => `<div class="border border-slate-800 bg-slate-900 p-3"><span class="text-[10px] font-bold uppercase tracking-widest text-slate-500">${label}</span><strong class="mt-1 block text-sm text-white">${escapeHtml(value)}</strong></div>`).join('')}</div>
+      <div class="grid gap-2 sm:grid-cols-2">${Object.entries(poll.values).sort((a, b) => b[1] - a[1]).map(([candidateId, value], index) => {
+        const candidate = candidateById(candidateId);
+        return `<div class="grid grid-cols-[42px_minmax(0,1fr)_auto] items-center gap-3 border border-slate-800 bg-slate-900 p-3"><span class="grid h-10 w-10 place-items-center font-display font-black text-white" style="background:${candidate?.color || '#475569'}">${index + 1}</span><span><strong class="block text-sm text-white">${escapeHtml(candidate?.name || candidateId)}</strong><small class="text-xs text-slate-500">${escapeHtml(candidate?.party || '')}</small></span><b class="font-display text-3xl text-white">${formatNumber(value)}%</b></div>`;
+      }).join('')}</div>
+      <div class="border-l-4 border-amber-400 bg-amber-400/10 p-3 text-sm text-amber-100">Este resultado pertence exclusivamente ao cenário indicado. Não foi combinado com outro levantamento.</div>
+      <a class="inline-flex min-h-11 items-center justify-center bg-emerald-500 px-5 py-3 text-sm font-black uppercase tracking-wide text-slate-950 hover:bg-emerald-400" href="${escapeHtml(poll.source)}" target="_blank" rel="noopener noreferrer">Abrir fonte publicada</a>
+    </div>`;
+    dialog.showModal();
+  }
+
+  function renderOfficeView(viewId, office) {
+    const host = $(viewId);
+    const records = state.registry.filter((row) => row.office === office);
+    const byUf = Object.fromEntries(records.reduce((map, row) => map.set(row.uf || 'BR', (map.get(row.uf || 'BR') || 0) + 1), new Map()));
+    host.innerHTML = `
+      ${headerMarkup('Base oficial TSE', office, 'Esta seção mostra cadastros oficiais. Percentuais eleitorais só aparecem na área presidencial quando há resultado público verificável.')}
+      <div class="grid gap-3 sm:grid-cols-3">
+        ${kpiMarkup('Registros oficiais', state.registryLoading ? '…' : formatNumber(records.length), 'linhas preservadas após deduplicação correta', 'blue')}
+        ${kpiMarkup('UFs com registros', state.registryLoading ? '…' : formatNumber(unique(records.map((row) => row.uf)).length), 'unidades da Federação', 'emerald')}
+        ${kpiMarkup('Institutos', state.registryLoading ? '…' : formatNumber(unique(records.map((row) => row.institute)).length), 'empresas identificadas', 'amber')}
+      </div>
+      <article class="news-card">
+        <div class="news-card-heading"><div><span>Cobertura por UF</span><strong>Registros cadastrados</strong></div><small>Não representa voto</small></div>
+        <div class="grid grid-cols-3 gap-px bg-slate-800 sm:grid-cols-5 lg:grid-cols-7 xl:grid-cols-9">${['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'].map((uf) => `<button type="button" data-office-uf="${uf}" class="min-h-20 bg-slate-950 p-3 text-left hover:bg-slate-900"><strong class="font-display text-xl text-white">${uf}</strong><span class="mt-1 block text-xs text-slate-500">${formatNumber(byUf[uf] || 0)} registros</span></button>`).join('')}</div>
+      </article>
+      <article class="news-card">
+        <div class="news-card-heading"><div><span>Registros recentes</span><strong>${escapeHtml(office)}</strong></div><small>${records.length} registros</small></div>
+        ${registryTableMarkup(records.slice(0, 100))}
+      </article>`;
+    host.querySelectorAll('[data-office-uf]').forEach((button) => button.addEventListener('click', () => {
+      state.registryOffice = office;
+      state.registryUf = button.dataset.officeUf;
+      showView('registry');
+    }));
+  }
+
+  function registryTableMarkup(records) {
+    if (state.registryLoading) return '<div class="p-8 text-center text-sm text-slate-500">Carregando base oficial do TSE…</div>';
+    if (state.registryError) return `<div class="border-l-4 border-red-500 bg-red-500/10 p-4 text-sm text-red-100">${escapeHtml(state.registryError)}</div>`;
+    if (!records.length) return '<div class="p-8 text-center text-sm text-slate-500">Nenhum registro encontrado para este filtro.</div>';
+    return `<div class="overflow-x-auto"><table class="data-table"><thead><tr><th>Registro</th><th>Cargo</th><th>UF/local</th><th>Instituto</th><th>Campo</th><th>Amostra</th><th>Situação</th></tr></thead><tbody>${records.map((row) => `<tr><td><strong>${escapeHtml(row.registry || '—')}</strong></td><td>${escapeHtml(row.office || '—')}</td><td>${escapeHtml([row.uf, row.location].filter(Boolean).join(' · ') || 'Brasil')}</td><td>${escapeHtml(row.institute || '—')}</td><td>${escapeHtml(row.fieldStart || '—')}${row.fieldEnd ? ` a ${escapeHtml(row.fieldEnd)}` : ''}</td><td>${escapeHtml(row.sample || '—')}</td><td><span class="table-badge">${escapeHtml(row.status || 'Registrada')}</span></td></tr>`).join('')}</tbody></table></div>`;
+  }
+
+  function filteredRegistry() {
+    const query = state.registrySearch.trim().toLowerCase();
+    return state.registry.filter((row) => {
+      const officeMatch = state.registryOffice === 'Todos' || row.office === state.registryOffice;
+      const ufMatch = state.registryUf === 'Todas' || row.uf === state.registryUf;
+      const textMatch = !query || [row.registry, row.office, row.uf, row.location, row.institute, row.company].join(' ').toLowerCase().includes(query);
+      return officeMatch && ufMatch && textMatch;
+    });
+  }
+
+  function renderRegistry() {
+    const records = filteredRegistry();
+    const offices = unique(state.registry.map((row) => row.office)).sort();
+    const ufs = unique(state.registry.map((row) => row.uf)).sort();
+    $('registry').innerHTML = `
+      ${headerMarkup('Portal de Dados Abertos do TSE', 'Registros oficiais de pesquisas', 'A listagem preserva registros distintos por cargo, UF, localidade, instituto e período. Ela não inventa percentuais de intenção de voto.')}
+      <article class="news-card">
+        <div class="grid gap-3 border-b border-slate-800 bg-slate-950 p-4 md:grid-cols-[minmax(220px,1fr)_220px_180px_auto]">
+          <label class="control-label"><span>Buscar</span><input id="registrySearch" type="search" value="${escapeHtml(state.registrySearch)}" class="control-select" placeholder="Registro, instituto, cidade ou cargo"></label>
+          <label class="control-label"><span>Cargo</span><select id="registryOffice" class="control-select"><option>Todos</option>${offices.map((office) => `<option ${state.registryOffice === office ? 'selected' : ''}>${escapeHtml(office)}</option>`).join('')}</select></label>
+          <label class="control-label"><span>UF</span><select id="registryUf" class="control-select"><option>Todas</option>${ufs.map((uf) => `<option ${state.registryUf === uf ? 'selected' : ''}>${escapeHtml(uf)}</option>`).join('')}</select></label>
+          <div class="flex items-end"><button id="clearRegistryFilters" type="button" class="control-button w-full">Limpar filtros</button></div>
+        </div>
+        <div class="news-card-heading"><div><span>Resultado do filtro</span><strong>${formatNumber(records.length)} registros</strong></div><small>Mostrando até ${state.registryLimit}</small></div>
+        ${registryTableMarkup(records.slice(0, state.registryLimit))}
+        ${records.length > state.registryLimit ? '<button id="loadMoreRegistry" type="button" class="m-4 min-h-11 border border-slate-700 bg-slate-900 px-5 py-3 text-sm font-black uppercase tracking-wide text-white hover:bg-slate-800">Carregar mais</button>' : ''}
+      </article>`;
+
+    $('registrySearch')?.addEventListener('input', (event) => { state.registrySearch = event.target.value; state.registryLimit = 80; renderRegistry(); });
+    $('registryOffice')?.addEventListener('change', (event) => { state.registryOffice = event.target.value; state.registryLimit = 80; renderRegistry(); });
+    $('registryUf')?.addEventListener('change', (event) => { state.registryUf = event.target.value; state.registryLimit = 80; renderRegistry(); });
+    $('clearRegistryFilters')?.addEventListener('click', () => { state.registrySearch = ''; state.registryOffice = 'Todos'; state.registryUf = 'Todas'; state.registryLimit = 80; renderRegistry(); });
+    $('loadMoreRegistry')?.addEventListener('click', () => { state.registryLimit += 100; renderRegistry(); });
+  }
+
+  function renderSources() {
+    const sources = unique(DATA.polls.map((poll) => poll.institute)).sort();
+    $('sources').innerHTML = `
+      ${headerMarkup('Fontes e auditoria', 'Como cada número pode ser conferido', 'O painel mantém o link da publicação, o registro eleitoral quando localizado e os metadados básicos de cada levantamento.')}
+      <div class="grid gap-4 lg:grid-cols-2">
+        <article class="news-card"><div class="news-card-heading"><div><span>Fonte oficial</span><strong>TSE / PesqEle</strong></div><small>Atualização diária</small></div><div class="p-4 text-sm leading-relaxed text-slate-300"><p>O endpoint do painel baixa o arquivo oficial de pesquisas eleitorais de 2026, processa todos os CSVs e preserva registros diferentes mesmo quando compartilham o mesmo número de pesquisa.</p><a class="source-link mt-4 inline-flex" href="https://dadosabertos.tse.jus.br/dataset/pesquisas-eleitorais-2026" target="_blank" rel="noopener noreferrer">Abrir conjunto oficial</a></div></article>
+        <article class="news-card"><div class="news-card-heading"><div><span>Resultados publicados</span><strong>Catálogo editorial verificável</strong></div><small>${DATA.polls.length} cenários</small></div><div class="p-4 text-sm leading-relaxed text-slate-300"><p>Os percentuais não são extraídos do CSV do TSE, porque o arquivo cadastral não contém os resultados de cada pergunta. Eles são cadastrados somente após publicação verificável.</p><p class="mt-3 text-slate-500">${escapeHtml(DATA.methodology)}</p></div></article>
