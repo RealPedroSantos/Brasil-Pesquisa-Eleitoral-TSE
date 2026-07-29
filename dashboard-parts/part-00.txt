@@ -20,7 +20,7 @@
     round: 1,
     matchup: 'lula-flavio',
     institute: 'all',
-    selectedCandidates: new Set(['lula', 'flavio', 'renan', 'caiado', 'zema', 'cury', 'daciolo']),
+    selectedCandidates: new Set(DATA.candidates.map((candidate) => candidate.id)),
     selectedPollId: null,
     registry: [],
     registryMeta: null,
@@ -46,6 +46,23 @@
   const dateValue = (date) => new Date(`${date}T12:00:00-03:00`).getTime();
   const formatDate = (date) => new Date(`${date}T12:00:00-03:00`).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', '');
   const unique = (values) => [...new Set(values.filter(Boolean))];
+  const candidatePhoto = (candidate) => candidate?.photo || `/api/public-figure-photo?name=${encodeURIComponent(candidate?.name || '')}`;
+  const candidateInitials = (candidate) => String(candidate?.name || '?').split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase();
+
+  function candidatePhotoMarkup(candidate, size = 'md') {
+    return `<span class="candidate-photo candidate-photo-${size}" style="--candidate-color:${candidate?.color || '#475569'}">
+      <span aria-hidden="true">${escapeHtml(candidateInitials(candidate))}</span>
+      <img data-candidate-photo src="${escapeHtml(candidatePhoto(candidate))}" alt="Foto de ${escapeHtml(candidate?.name || 'candidato')}" loading="lazy" decoding="async">
+    </span>`;
+  }
+
+  function bindPhotoFallbacks(root = document) {
+    qsa('img[data-candidate-photo]', root).forEach((image) => {
+      if (image.dataset.photoBound === '1') return;
+      image.dataset.photoBound = '1';
+      image.addEventListener('error', () => image.remove(), { once: true });
+    });
+  }
 
   function svgEl(name, attrs = {}, text = '') {
     const node = document.createElementNS(NS, name);
