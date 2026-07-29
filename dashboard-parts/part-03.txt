@@ -31,29 +31,65 @@
         svg.appendChild(dot);
         svg.appendChild(hit);
       });
+
+      const latestPoint = points.at(-1);
+      const portraitSize = state.round === 2 ? 48 : 34;
+      const half = portraitSize / 2;
+      const clipId = `${svg.id}-${candidate.id}-portrait`;
+      const clip = svgEl('clipPath', { id: clipId });
+      clip.appendChild(svgEl('rect', { x: latestPoint.x - half, y: latestPoint.y - half, width: portraitSize, height: portraitSize }));
+      defs.appendChild(clip);
+      svg.appendChild(svgEl('rect', { x: latestPoint.x - half, y: latestPoint.y - half, width: portraitSize, height: portraitSize, fill: '#0f172a', class: 'chart-candidate-photo-fallback' }));
+      svg.appendChild(svgEl('text', { x: latestPoint.x, y: latestPoint.y + 4, fill: '#ffffff', class: 'chart-candidate-initials', 'text-anchor': 'middle' }, candidateInitials(candidate)));
+      const portrait = svgEl('image', {
+        href: candidatePhoto(candidate), x: latestPoint.x - half, y: latestPoint.y - half,
+        width: portraitSize, height: portraitSize, preserveAspectRatio: 'xMidYMid slice',
+        'clip-path': `url(#${clipId})`, class: 'chart-candidate-photo'
+      });
+      portrait.addEventListener('error', () => portrait.remove(), { once: true });
+      svg.appendChild(portrait);
+      svg.appendChild(svgEl('rect', { x: latestPoint.x - half, y: latestPoint.y - half, width: portraitSize, height: portraitSize, fill: 'none', stroke: candidate.color, 'stroke-width': 3, class: 'chart-candidate-photo-border' }));
     });
 
     if (!polls.length) {
       svg.appendChild(svgEl('text', { x: width / 2, y: height / 2, class: 'chart-empty-label', 'text-anchor': 'middle' }, 'Nenhuma pesquisa encontrada para este filtro.'));
     }
 
+    if (ranking) {
+      const rankingRows = candidateIds.map((id) => {
+        const candidate = candidateById(id);
+        const poll = polls.slice().reverse().find((item) => Object.hasOwn(item.values, id));
+        return candidate && poll ? { candidate, poll, value: poll.values[id] } : null;
+      }).filter(Boolean).sort((a, b) => b.value - a.value || a.candidate.name.localeCompare(b.candidate.name));
+      ranking.innerHTML = `<div class="chart-ranking-heading"><span>Último dado disponível</span><strong>Ranking com fotos</strong></div>
+        <div class="chart-ranking-list">${rankingRows.map((row, index) => `<button type="button" data-poll-id="${row.poll.id}" class="chart-ranking-row" style="--candidate-color:${row.candidate.color}">
+          <span class="chart-ranking-position">${index + 1}</span>${candidatePhotoMarkup(row.candidate, 'sm')}
+          <span class="min-w-0"><strong>${escapeHtml(row.candidate.name)}</strong><small>${escapeHtml(row.candidate.party)} · ${escapeHtml(row.poll.publication)}</small></span>
+          <b>${formatNumber(row.value)}%</b>
+        </button>`).join('')}</div>`;
+      bindPhotoFallbacks(ranking);
+      ranking.querySelectorAll('[data-poll-id]').forEach((button) => button.addEventListener('click', () => openPollDialog(button.dataset.pollId)));
+    }
+
     if (legend) {
       legend.innerHTML = candidateIds.map((id) => {
         const candidate = candidateById(id);
-        return `<span class="inline-flex items-center gap-2 border border-slate-700 bg-slate-950 px-3 py-2 text-xs font-bold uppercase tracking-wide text-slate-200"><i class="h-3 w-3" style="background:${candidate.color}"></i>${escapeHtml(candidate.name)} · ${escapeHtml(candidate.party)}</span>`;
+        return `<span class="candidate-legend-item" style="--candidate-color:${candidate.color}">${candidatePhotoMarkup(candidate, 'xs')}<span>${escapeHtml(candidate.name)} · ${escapeHtml(candidate.party)}</span></span>`;
       }).join('');
+      bindPhotoFallbacks(legend);
     }
   }
 
   function showChartTooltip(event, tooltip, candidate, poll, value, keyboard = false) {
     if (!tooltip) return;
-    tooltip.innerHTML = `<strong class="block font-display text-lg uppercase text-white">${escapeHtml(candidate.name)} · ${formatNumber(value)}%</strong><span class="mt-1 block text-xs text-slate-300">${escapeHtml(poll.institute)} · ${escapeHtml(poll.publication)}</span><span class="mt-1 block text-xs text-slate-500">${escapeHtml(poll.scenario)} · ${escapeHtml(poll.sample)} · ${escapeHtml(poll.margin)}</span>`;
+    tooltip.innerHTML = `<div class="flex items-center gap-3">${candidatePhotoMarkup(candidate, 'md')}<span><strong class="block font-display text-lg uppercase text-white">${escapeHtml(candidate.name)} · ${formatNumber(value)}%</strong><small class="block text-xs text-slate-400">${escapeHtml(candidate.party)}</small></span></div><span class="mt-3 block text-xs text-slate-300">${escapeHtml(poll.institute)} · ${escapeHtml(poll.publication)}</span><span class="mt-1 block text-xs text-slate-500">${escapeHtml(poll.scenario)} · ${escapeHtml(poll.sample)} · ${escapeHtml(poll.margin)}</span>`;
+    bindPhotoFallbacks(tooltip);
     tooltip.classList.remove('hidden');
     const parent = tooltip.parentElement.getBoundingClientRect();
     const x = keyboard ? parent.width / 2 : event.clientX - parent.left;
     const y = keyboard ? 80 : event.clientY - parent.top;
-    tooltip.style.left = `${Math.max(8, Math.min(parent.width - 240, x + 12))}px`;
-    tooltip.style.top = `${Math.max(8, y - 72)}px`;
+    tooltip.style.left = `${Math.max(8, Math.min(parent.width - 270, x + 12))}px`;
+    tooltip.style.top = `${Math.max(8, y - 94)}px`;
   }
 
   function renderLatestPolls() {
@@ -63,8 +99,9 @@
     host.innerHTML = latest.map((poll) => `<button type="button" data-poll-id="${poll.id}" class="grid w-full gap-3 px-4 py-4 text-left transition hover:bg-slate-800/60 sm:grid-cols-[100px_minmax(0,1fr)_auto] sm:items-center">
       <span class="font-display text-lg font-black text-white">${escapeHtml(poll.publication)}</span>
       <span class="min-w-0"><strong class="block truncate text-sm text-slate-100">${escapeHtml(poll.institute)}</strong><small class="mt-1 block truncate text-xs text-slate-500">${poll.round}º turno · ${escapeHtml(poll.scenario)} · ${escapeHtml(poll.registry || 'registro não confirmado no catálogo')}</small></span>
-      <span class="flex flex-wrap justify-start gap-1 sm:justify-end">${Object.entries(poll.values).slice(0, 3).map(([id, value]) => `<i class="border border-slate-700 bg-slate-950 px-2 py-1 text-xs not-italic text-slate-300">${escapeHtml(candidateById(id)?.name || id)} ${formatNumber(value)}%</i>`).join('')}</span>
+      <span class="flex flex-wrap justify-start gap-1 sm:justify-end">${Object.entries(poll.values).slice(0, 3).map(([id, value]) => { const candidate = candidateById(id); return `<i class="poll-result-chip">${candidatePhotoMarkup(candidate, 'xs')}<span>${escapeHtml(candidate?.name || id)} <b>${formatNumber(value)}%</b></span></i>`; }).join('')}</span>
     </button>`).join('');
+    bindPhotoFallbacks(host);
     host.querySelectorAll('[data-poll-id]').forEach((button) => button.addEventListener('click', () => openPollDialog(button.dataset.pollId)));
   }
 
@@ -78,9 +115,10 @@
       <td><span class="table-badge">${poll.round}º turno</span><small>${escapeHtml(poll.scenario)}</small></td>
       <td>${escapeHtml(poll.institute)}</td><td>${escapeHtml(poll.field)}</td><td>${escapeHtml(poll.sample)}</td><td>${escapeHtml(poll.margin)}</td>
       <td><span class="${poll.registry ? 'text-emerald-300' : 'text-slate-500'}">${escapeHtml(poll.registry || 'Não confirmado')}</span></td>
-      <td><div class="flex min-w-[260px] flex-wrap gap-1">${Object.entries(poll.values).map(([id, value]) => `<button type="button" data-poll-id="${poll.id}" class="border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-300 hover:border-slate-500">${escapeHtml(candidateById(id)?.name || id)} <b class="text-white">${formatNumber(value)}%</b></button>`).join('')}</div></td>
+      <td><div class="flex min-w-[320px] flex-wrap gap-1">${Object.entries(poll.values).map(([id, value]) => { const candidate = candidateById(id); return `<button type="button" data-poll-id="${poll.id}" class="poll-table-candidate">${candidatePhotoMarkup(candidate, 'xs')}<span>${escapeHtml(candidate?.name || id)} <b>${formatNumber(value)}%</b></span></button>`; }).join('')}</div></td>
       <td><a class="source-link" href="${escapeHtml(poll.source)}" target="_blank" rel="noopener noreferrer">Abrir</a></td>
     </tr>`).join('');
+    bindPhotoFallbacks(body);
     body.querySelectorAll('[data-poll-id]').forEach((button) => button.addEventListener('click', () => openPollDialog(button.dataset.pollId)));
   }
 
