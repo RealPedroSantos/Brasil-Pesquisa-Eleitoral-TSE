@@ -55,14 +55,30 @@
     renderLatestPolls();
   }
 
+  function candidateRosterMarkup() {
+    return `<article class="news-card">
+      <div class="news-card-heading"><div><span>Todos os nomes do catálogo</span><strong>Candidatos com foto</strong></div><small>${DATA.candidates.length} candidatos</small></div>
+      <div class="candidate-roster-grid">${DATA.candidates.map((candidate) => {
+        const firstRound = DATA.polls.filter((poll) => poll.round === 1 && Object.hasOwn(poll.values, candidate.id)).length;
+        const secondRound = DATA.polls.filter((poll) => poll.round === 2 && Object.hasOwn(poll.values, candidate.id)).length;
+        return `<article class="candidate-roster-card" style="--candidate-color:${candidate.color}">
+          ${candidatePhotoMarkup(candidate, 'lg')}
+          <div class="min-w-0"><strong>${escapeHtml(candidate.name)}</strong><small>${escapeHtml(candidate.party)}</small><span>${firstRound} cenário(s) de 1º turno · ${secondRound} de 2º turno</span></div>
+        </article>`;
+      }).join('')}</div>
+    </article>`;
+  }
+
   function renderPresident() {
     $('president').innerHTML = `
       ${headerMarkup('Presidência da República', 'Todos os resultados presidenciais verificados', 'O gráfico não escolhe uma pesquisa para representar outra. Cada levantamento aparece como um ponto independente, com fonte e metadados acessíveis.')}
+      ${candidateRosterMarkup()}
       <div id="presidentExplorer"></div>
       <article class="news-card">
         <div class="news-card-heading"><div><span>Catálogo completo</span><strong>Pesquisa por pesquisa</strong></div><small id="pollTableCount">—</small></div>
         <div class="overflow-x-auto"><table class="data-table"><thead><tr><th>Publicação</th><th>Turno/cenário</th><th>Instituto</th><th>Campo</th><th>Amostra</th><th>Margem</th><th>Registro</th><th>Resultados</th><th>Fonte</th></tr></thead><tbody id="pollTableBody"></tbody></table></div>
       </article>`;
+    bindPhotoFallbacks($('president'));
     renderPollExplorer($('presidentExplorer'), { compact: false });
     renderPollTable();
   }
