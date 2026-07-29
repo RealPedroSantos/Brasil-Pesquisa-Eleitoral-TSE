@@ -40,7 +40,7 @@ async function main() {
 
   window.eval(dashboard);
   window.document.dispatchEvent(new window.Event('DOMContentLoaded', { bubbles: true }));
-  await new Promise((resolve) => window.setTimeout(resolve, 80));
+  await new Promise((resolve) => window.setTimeout(resolve, 100));
 
   const overview = window.document.getElementById('overview');
   const chart = overview?.querySelector('svg[aria-label="Gráfico de pesquisas eleitorais"]');
@@ -57,37 +57,68 @@ async function main() {
   });
   if (overview.querySelectorAll('[data-overview-office] img[data-candidate-photo]').length < 30) throw new Error('Categorias inferiores não exibem fotos suficientes.');
 
+  const governorSection = overview.querySelector('[data-overview-office="governors"]');
+  const governorPolls = governorSection?.querySelectorAll('[data-office-poll]') || [];
+  if (governorPolls.length < 5) throw new Error(`Cobertura estadual deveria ter pelo menos 5 pesquisas, mas mostrou ${governorPolls.length}.`);
+  if (governorSection.querySelectorAll('[data-office-chart] figure').length < 5) throw new Error('Gráficos estaduais dinâmicos não renderizaram.');
+  if (governorSection.querySelectorAll('[data-office-chart] img[data-candidate-photo]').length < 20) throw new Error('Gráficos estaduais não exibem fotos suficientes.');
+
+  const spPoll = governorSection.querySelector('[data-office-poll="governor-sp-datafolha-2026-07-05"]');
+  const spSecondRound = spPoll?.querySelector('[data-poll-round="second"]');
+  if (!spSecondRound) throw new Error('Controle de segundo turno de São Paulo não renderizou.');
+  spSecondRound.click();
+  await new Promise((resolve) => window.setTimeout(resolve, 20));
+  if (!spPoll.querySelector('[data-office-chart-round="second"]')) throw new Error('Troca do gráfico estadual para segundo turno falhou.');
+  if (spSecondRound.getAttribute('aria-pressed') !== 'true') throw new Error('Estado visual do botão de segundo turno não foi atualizado.');
+
+  const mgPoll = governorSection.querySelector('[data-office-poll="governor-mg-quaest-2026-07-28"]');
+  const mgSecondRound = mgPoll?.querySelector('[data-poll-round="second"]');
+  mgSecondRound?.click();
+  await new Promise((resolve) => window.setTimeout(resolve, 20));
+  const mgScenario = mgPoll?.querySelector('[data-poll-scenario]');
+  if (!mgScenario || mgScenario.options.length < 5) throw new Error('Cenários de segundo turno de Minas Gerais não foram carregados.');
+  mgScenario.value = '3';
+  mgScenario.dispatchEvent(new window.Event('change', { bubbles: true }));
+  await new Promise((resolve) => window.setTimeout(resolve, 20));
+  if (!mgPoll.querySelector('[data-office-chart-scenario="3"]')) throw new Error('Troca de cenário estadual não atualizou o gráfico.');
+
   const chamberSimulation = overview.querySelector('[data-seat-simulation="chamber"]');
   const senateSimulation = overview.querySelector('[data-seat-simulation="senate"]');
   if (!chamberSimulation || chamberSimulation.querySelectorAll('svg circle').length !== 513) throw new Error('Simulação da Câmara não contém exatamente 513 cadeiras.');
   if (!senateSimulation || senateSimulation.querySelectorAll('svg circle').length !== 54) throw new Error('Simulação do Senado não contém exatamente 54 cadeiras em disputa.');
-  if (!overview.textContent.includes('Limite do modelo')) throw new Error('Avisos metodológicos das simulações não renderizaram.');
+  if (chamberSimulation.dataset.seatCompact !== 'true' || senateSimulation.dataset.seatCompact !== 'true') throw new Error('Simuladores da visão geral não usam o layout compacto.');
+  if (!overview.textContent.includes('Metodologia e limite do modelo')) throw new Error('Avisos metodológicos compactos não renderizaram.');
   if (window.document.getElementById('bootScreen')) throw new Error('Tela de carregamento não foi removida.');
 
-  const secondRound = overview.querySelector('[data-round="2"]');
-  secondRound?.click();
+  const presidentialSecondRound = overview.querySelector('[data-round="2"]');
+  presidentialSecondRound?.click();
   await new Promise((resolve) => window.setTimeout(resolve, 30));
-  if (!window.document.getElementById('overview')?.textContent.includes('Segundo turno')) throw new Error('Alternância para segundo turno falhou.');
-  if (window.document.querySelectorAll('#overview [data-overview-office]').length !== 5) throw new Error('Página contínua desapareceu após trocar o turno.');
+  if (!window.document.getElementById('overview')?.textContent.includes('Segundo turno')) throw new Error('Alternância presidencial para segundo turno falhou.');
+  if (window.document.querySelectorAll('#overview [data-overview-office]').length !== 5) throw new Error('Página contínua desapareceu após trocar o turno presidencial.');
 
   const matchup = window.document.getElementById('matchupFilter');
-  if (!matchup || matchup.options.length < 4) throw new Error('Confrontos de segundo turno não foram carregados.');
+  if (!matchup || matchup.options.length < 4) throw new Error('Confrontos presidenciais de segundo turno não foram carregados.');
 
   const chamberNav = window.document.querySelector('[data-view="chamber"]');
   chamberNav?.click();
   await new Promise((resolve) => window.setTimeout(resolve, 30));
   const chamber = window.document.getElementById('chamber');
-  if (!chamber?.querySelector('[data-seat-simulation="chamber"]')) throw new Error('Página completa da Câmara não exibe a simulação.');
-  if (chamber.querySelectorAll('[data-seat-simulation="chamber"] svg circle').length !== 513) throw new Error('Página completa da Câmara perdeu cadeiras.');
+  const fullChamberSimulation = chamber?.querySelector('[data-seat-simulation="chamber"]');
+  if (!fullChamberSimulation) throw new Error('Página completa da Câmara não exibe a simulação.');
+  if (fullChamberSimulation.querySelectorAll('svg circle').length !== 513) throw new Error('Página completa da Câmara perdeu cadeiras.');
+  if (fullChamberSimulation.dataset.seatCompact !== 'false') throw new Error('Página completa da Câmara não usa o layout completo alinhado.');
   if (chamber.querySelectorAll('img[data-candidate-photo]').length < 6) throw new Error('Página da Câmara não exibe os perfis com fotos.');
 
   const senateNav = window.document.querySelector('[data-view="senate"]');
   senateNav?.click();
   await new Promise((resolve) => window.setTimeout(resolve, 30));
   const senate = window.document.getElementById('senate');
-  if (!senate?.querySelector('[data-seat-simulation="senate"]')) throw new Error('Página completa do Senado não exibe a simulação.');
-  if (senate.querySelectorAll('[data-seat-simulation="senate"] svg circle').length !== 54) throw new Error('Página completa do Senado perdeu cadeiras.');
+  const fullSenateSimulation = senate?.querySelector('[data-seat-simulation="senate"]');
+  if (!fullSenateSimulation) throw new Error('Página completa do Senado não exibe a simulação.');
+  if (fullSenateSimulation.querySelectorAll('svg circle').length !== 54) throw new Error('Página completa do Senado perdeu cadeiras.');
+  if (fullSenateSimulation.dataset.seatCompact !== 'false') throw new Error('Página completa do Senado não usa o layout completo alinhado.');
   if (senate.querySelectorAll('[data-office-poll] img[data-candidate-photo]').length < 6) throw new Error('Página do Senado não exibe candidatos com fotos.');
+  if (senate.querySelector('[data-poll-round="second"]')) throw new Error('Senado não deve exibir controle de segundo turno.');
 
   const presidentNav = window.document.querySelector('[data-view="president"]');
   presidentNav?.click();
@@ -106,7 +137,7 @@ async function main() {
   if (errors.length) throw new Error(`Erros de execução: ${errors.map(String).join(' | ')}`);
 
   window.close();
-  process.stdout.write('Smoke test do painel, página contínua, cadeiras e fotos: OK\n');
+  process.stdout.write('Smoke test do painel, cenários estaduais, cadeiras compactas e fotos: OK\n');
 }
 
 main().catch((error) => {
