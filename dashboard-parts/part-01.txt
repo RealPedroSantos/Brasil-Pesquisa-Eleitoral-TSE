@@ -1,0 +1,90 @@
+      emerald: 'border-t-emerald-500',
+      blue: 'border-t-blue-500',
+      red: 'border-t-red-500',
+      amber: 'border-t-amber-400'
+    };
+    return `<article class="border border-slate-800 border-t-4 ${classes[accent]} bg-slate-900 p-4">
+      <span class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">${escapeHtml(label)}</span>
+      <strong class="mt-2 block font-display text-4xl font-black text-white">${escapeHtml(value)}</strong>
+      <small class="mt-1 block text-xs text-slate-400">${escapeHtml(detail)}</small>
+    </article>`;
+  }
+
+  function renderOverview() {
+    const firstRound = DATA.polls.filter((poll) => poll.round === 1).length;
+    const secondRound = DATA.polls.filter((poll) => poll.round === 2).length;
+    const latest = DATA.polls.slice().sort((a, b) => dateValue(b.date) - dateValue(a.date))[0];
+    const tseTotal = state.registryMeta?.total ?? state.registry.length;
+
+    $('overview').innerHTML = `
+      ${headerMarkup(
+        'Painel eleitoral auditável',
+        'Pesquisa por pesquisa, sem média escondida',
+        'Cada ponto do gráfico corresponde a um levantamento publicado. Primeiro e segundo turno permanecem separados; cenários diferentes não são combinados automaticamente.',
+        `<div class="flex flex-wrap gap-2"><span class="status-chip"><i class="bg-emerald-500"></i>Catálogo verificado</span><span class="status-chip"><i class="bg-blue-500"></i>TSE conectado</span></div>`
+      )}
+
+      <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        ${kpiMarkup('Pesquisas de 1º turno', String(firstRound), 'cenários publicados no catálogo', 'emerald')}
+        ${kpiMarkup('Pesquisas de 2º turno', String(secondRound), 'confrontos publicados no catálogo', 'red')}
+        ${kpiMarkup('Registros oficiais TSE', state.registryLoading ? '…' : formatNumber(tseTotal), 'cadastros carregados da base diária', 'blue')}
+        ${kpiMarkup('Última publicação', latest?.publication || '—', latest ? latest.institute : 'Sem dados', 'amber')}
+      </div>
+
+      <div id="overviewChart"></div>
+
+      <div class="grid gap-4 xl:grid-cols-[1.25fr_.75fr]">
+        <article class="news-card">
+          <div class="news-card-heading"><div><span>Últimos levantamentos</span><strong>Publicações verificadas</strong></div><small>Sem cálculo de média</small></div>
+          <div id="latestPolls" class="divide-y divide-slate-800"></div>
+        </article>
+        <article class="news-card">
+          <div class="news-card-heading"><div><span>Auditoria dos dados</span><strong>Duas camadas independentes</strong></div><small>Transparência</small></div>
+          <div class="space-y-4 p-4 text-sm leading-relaxed text-slate-300">
+            <div class="border-l-4 border-emerald-500 bg-slate-950 p-3"><strong class="block font-display text-lg uppercase text-white">Resultados publicados</strong><p class="mt-1 text-slate-400">Percentuais transcritos de publicações verificáveis, com instituto, data, amostra, margem, registro e link da fonte.</p></div>
+            <div class="border-l-4 border-blue-500 bg-slate-950 p-3"><strong class="block font-display text-lg uppercase text-white">Registros do TSE</strong><p class="mt-1 text-slate-400">Cadastro oficial atualizado diariamente. O arquivo do TSE não contém automaticamente os percentuais dos cenários publicados.</p></div>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="border border-slate-800 bg-slate-950 p-3"><span class="text-xs uppercase text-slate-500">Resultados com registro localizado</span><strong class="mt-1 block font-display text-2xl text-white">${matchedRegistryCount()}</strong></div>
+              <div class="border border-slate-800 bg-slate-950 p-3"><span class="text-xs uppercase text-slate-500">Versão do catálogo</span><strong class="mt-1 block font-display text-lg text-white">${escapeHtml(DATA.version)}</strong></div>
+            </div>
+          </div>
+        </article>
+      </div>`;
+
+    renderPollExplorer($('overviewChart'), { compact: true });
+    renderLatestPolls();
+  }
+
+  function renderPresident() {
+    $('president').innerHTML = `
+      ${headerMarkup('Presidência da República', 'Todos os resultados presidenciais verificados', 'O gráfico não escolhe uma pesquisa para representar outra. Cada levantamento aparece como um ponto independente, com fonte e metadados acessíveis.')}
+      <div id="presidentExplorer"></div>
+      <article class="news-card">
+        <div class="news-card-heading"><div><span>Catálogo completo</span><strong>Pesquisa por pesquisa</strong></div><small id="pollTableCount">—</small></div>
+        <div class="overflow-x-auto"><table class="data-table"><thead><tr><th>Publicação</th><th>Turno/cenário</th><th>Instituto</th><th>Campo</th><th>Amostra</th><th>Margem</th><th>Registro</th><th>Resultados</th><th>Fonte</th></tr></thead><tbody id="pollTableBody"></tbody></table></div>
+      </article>`;
+    renderPollExplorer($('presidentExplorer'), { compact: false });
+    renderPollTable();
+  }
+
+  function renderPollExplorer(host, options = {}) {
+    if (!host) return;
+    const polls = currentPolls();
+    const institutes = unique(DATA.polls.filter((poll) => poll.round === state.round).map((poll) => poll.institute)).sort();
+    const matchups = unique(DATA.polls.filter((poll) => poll.round === 2).map((poll) => poll.matchup));
+    const candidates = unique(polls.flatMap((poll) => Object.keys(poll.values))).map(candidateById).filter(Boolean);
+
+    host.innerHTML = `<article class="news-card">
+      <div class="news-card-heading border-t-4 border-t-emerald-500"><div><span>Pesquisa por pesquisa</span><strong>${state.round === 1 ? 'Primeiro turno' : 'Segundo turno'}</strong></div><small>${polls.length} levantamento${polls.length === 1 ? '' : 's'}</small></div>
+      <div class="grid gap-3 border-b border-slate-800 bg-slate-950 p-3 lg:grid-cols-[auto_minmax(180px,1fr)_minmax(180px,1fr)]">
+        <div class="grid grid-cols-2 gap-2" role="group" aria-label="Turno eleitoral">
+          <button type="button" data-round="1" class="control-button ${state.round === 1 ? 'is-active' : ''}">1º turno</button>
+          <button type="button" data-round="2" class="control-button ${state.round === 2 ? 'is-active' : ''}">2º turno</button>
+        </div>
+        <label class="control-label"><span>Instituto</span><select id="instituteFilter" class="control-select"><option value="all">Todos os institutos</option>${institutes.map((name) => `<option value="${escapeHtml(name)}" ${state.institute === name ? 'selected' : ''}>${escapeHtml(name)}</option>`).join('')}</select></label>
+        ${state.round === 2 ? `<label class="control-label"><span>Confronto</span><select id="matchupFilter" class="control-select">${matchups.map((matchup) => {
+          const label = DATA.polls.find((poll) => poll.matchup === matchup)?.scenario || matchup;
+          return `<option value="${escapeHtml(matchup)}" ${state.matchup === matchup ? 'selected' : ''}>${escapeHtml(label)}</option>`;
+        }).join('')}</select></label>` : `<div class="flex items-end"><p class="text-xs leading-relaxed text-slate-500">Cenários publicados permanecem separados no detalhe de cada ponto.</p></div>`}
+      </div>
+      <div class="border-b border-slate-800 bg-slate-900 px-3 py-3">
