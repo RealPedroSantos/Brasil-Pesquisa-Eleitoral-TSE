@@ -1,9 +1,16 @@
 {
   "name": "brasil-pesquisa-eleitoral-tse",
-  "version": "3.0.0",
+  "version": "4.0.0",
   "private": true,
+  "scripts": {
+    "build": "npx @tailwindcss/cli -i ./src/input.css -o ./tailwind.css --minify"
+  },
   "dependencies": {
     "adm-zip": "^0.5.16",
     "iconv-lite": "^0.6.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.1.10",
+    "tailwindcss": "^4.1.10"
   }
 }
