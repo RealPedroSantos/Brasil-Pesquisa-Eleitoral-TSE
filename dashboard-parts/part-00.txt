@@ -1,0 +1,90 @@
+(() => {
+  'use strict';
+
+  const DATA = window.POLL_RESULTS;
+  if (!DATA) throw new Error('Catálogo de pesquisas não carregado.');
+
+  const $ = (id) => document.getElementById(id);
+  const qsa = (selector, root = document) => [...root.querySelectorAll(selector)];
+  const NS = 'http://www.w3.org/2000/svg';
+  const OFFICE_VIEW = {
+    governors: 'Governador',
+    senate: 'Senador',
+    chamber: 'Deputado Federal',
+    assemblies: 'Deputado Estadual',
+    district: 'Deputado Distrital'
+  };
+
+  const state = {
+    view: 'overview',
+    round: 1,
+    matchup: 'lula-flavio',
+    institute: 'all',
+    selectedCandidates: new Set(['lula', 'flavio', 'renan', 'caiado', 'zema', 'cury', 'daciolo']),
+    selectedPollId: null,
+    registry: [],
+    registryMeta: null,
+    registrySearch: '',
+    registryOffice: 'Todos',
+    registryUf: 'Todas',
+    registryLimit: 80,
+    registryLoading: true,
+    registryError: ''
+  };
+
+  const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (char) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+  })[char]);
+
+  const formatNumber = (value, digits = null) => Number(value).toLocaleString('pt-BR', {
+    minimumFractionDigits: digits ?? (Number(value) % 1 ? 1 : 0),
+    maximumFractionDigits: digits ?? 1
+  });
+
+  const candidateById = (id) => DATA.candidates.find((candidate) => candidate.id === id);
+  const pollById = (id) => DATA.polls.find((poll) => poll.id === id);
+  const dateValue = (date) => new Date(`${date}T12:00:00-03:00`).getTime();
+  const formatDate = (date) => new Date(`${date}T12:00:00-03:00`).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', '');
+  const unique = (values) => [...new Set(values.filter(Boolean))];
+
+  function svgEl(name, attrs = {}, text = '') {
+    const node = document.createElementNS(NS, name);
+    Object.entries(attrs).forEach(([key, value]) => node.setAttribute(key, value));
+    if (text) node.textContent = text;
+    return node;
+  }
+
+  function currentPolls() {
+    return DATA.polls
+      .filter((poll) => poll.round === state.round)
+      .filter((poll) => state.round === 1 || poll.matchup === state.matchup)
+      .filter((poll) => state.institute === 'all' || poll.institute === state.institute)
+      .slice()
+      .sort((a, b) => dateValue(a.date) - dateValue(b.date) || a.id.localeCompare(b.id));
+  }
+
+  function visibleCandidateIds(polls = currentPolls()) {
+    const ids = unique(polls.flatMap((poll) => Object.keys(poll.values)));
+    return ids.filter((id) => state.selectedCandidates.has(id));
+  }
+
+  function matchedRegistryCount() {
+    const registered = new Set(state.registry.map((row) => String(row.registry || '').toUpperCase()).filter(Boolean));
+    return DATA.polls.filter((poll) => poll.registry && registered.has(poll.registry.toUpperCase())).length;
+  }
+
+  function headerMarkup(eyebrow, title, description, right = '') {
+    return `<header class="border-b border-slate-800 pb-5">
+      <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+        <div class="max-w-4xl">
+          <span class="mb-2 block font-display text-sm font-black uppercase tracking-[0.2em] text-emerald-400">${escapeHtml(eyebrow)}</span>
+          <h1 class="font-display text-4xl font-black uppercase leading-none tracking-tight text-white sm:text-5xl">${escapeHtml(title)}</h1>
+          <p class="mt-3 max-w-3xl text-sm leading-relaxed text-slate-400 sm:text-base">${escapeHtml(description)}</p>
+        </div>
+        ${right}
+      </div>
+    </header>`;
+  }
+
+  function kpiMarkup(label, value, detail, accent = 'emerald') {
+    const classes = {
