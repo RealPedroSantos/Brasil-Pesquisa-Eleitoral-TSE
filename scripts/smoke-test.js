@@ -45,6 +45,9 @@ async function main() {
   const chart = overview?.querySelector('svg[aria-label="Gráfico de pesquisas eleitorais"]');
   if (!overview?.textContent.includes('Pesquisa por pesquisa')) throw new Error('Visão geral não renderizou.');
   if (!chart || chart.querySelectorAll('.chart-point').length < 12) throw new Error('Gráfico presidencial não renderizou a série expandida.');
+  if (chart.querySelectorAll('.chart-candidate-photo').length < 8) throw new Error('Fotos não foram colocadas nas linhas do gráfico.');
+  if (overview.querySelectorAll('.candidate-photo-card img[data-candidate-photo]').length < 8) throw new Error('Seletor com fotos dos candidatos não renderizou.');
+  if (overview.querySelectorAll('.chart-ranking-row img[data-candidate-photo]').length < 8) throw new Error('Ranking lateral com fotos não renderizou.');
   if (window.document.getElementById('bootScreen')) throw new Error('Tela de carregamento não foi removida.');
 
   const secondRound = overview.querySelector('[data-round="2"]');
@@ -58,12 +61,21 @@ async function main() {
   const presidentNav = window.document.querySelector('[data-view="president"]');
   presidentNav?.click();
   await new Promise((resolve) => window.setTimeout(resolve, 20));
-  if (!window.document.getElementById('president')?.textContent.includes('Catálogo completo')) throw new Error('Página presidencial não renderizou.');
+  const president = window.document.getElementById('president');
+  if (!president?.textContent.includes('Catálogo completo')) throw new Error('Página presidencial não renderizou.');
+  if (president.querySelectorAll('.candidate-roster-card').length !== window.POLL_RESULTS.candidates.length) throw new Error('Catálogo visual não mostra todos os candidatos.');
+  if (president.querySelectorAll('.candidate-roster-card img[data-candidate-photo]').length !== window.POLL_RESULTS.candidates.length) throw new Error('Nem todos os candidatos receberam foto no catálogo visual.');
+
+  const detailButton = president.querySelector('.chart-ranking-row[data-poll-id]');
+  detailButton?.click();
+  await new Promise((resolve) => window.setTimeout(resolve, 10));
+  if (!window.document.getElementById('pollDialog')?.open) throw new Error('Detalhes da pesquisa não abriram.');
+  if (!window.document.querySelector('.poll-dialog-candidate img[data-candidate-photo]')) throw new Error('Detalhes da pesquisa não exibem fotos dos candidatos.');
 
   if (errors.length) throw new Error(`Erros de execução: ${errors.map(String).join(' | ')}`);
 
   window.close();
-  process.stdout.write('Smoke test do painel e catálogo expandido: OK\n');
+  process.stdout.write('Smoke test do painel, catálogo e fotos: OK\n');
 }
 
 main().catch((error) => {
