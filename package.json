@@ -1,9 +1,9 @@
 {
   "name": "brasil-pesquisa-eleitoral-tse",
-  "version": "4.0.4",
+  "version": "4.1.0",
   "private": true,
   "scripts": {
-    "build": "rm -rf public && mkdir -p public && cat dashboard-parts/*.txt > public/dashboard.js && node --check public/dashboard.js && node --check polls-data.js && node --check polls-data-extra.js && npx @tailwindcss/cli -i ./src/input.css -o ./public/tailwind.css --minify && cp index.html polls-data.js polls-data-extra.js public/ && node scripts/smoke-test.js"
+    "build": "rm -rf public && mkdir -p public && cat dashboard-parts/*.txt > public/dashboard.js && node --check public/dashboard.js && node --check polls-data.js && node --check polls-data-extra.js && node --check api/election-results.js && npx @tailwindcss/cli -i ./src/input.css -o ./public/tailwind.css --minify && cp index.html polls-data.js polls-data-extra.js public/ && node scripts/smoke-test.js && node scripts/elections-2026-test.js"
   },
   "dependencies": {
     "adm-zip": "^0.5.16",
