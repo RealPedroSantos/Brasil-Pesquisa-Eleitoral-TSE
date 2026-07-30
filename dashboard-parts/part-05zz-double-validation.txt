@@ -1,0 +1,52 @@
+
+  // Segunda barreira de confiança: nenhuma resposta parcial da base oficial entra silenciosamente no painel.
+  loadRegistry = async function loadRegistryDoubleValidated() {
+    state.registryLoading = true;
+    state.registryError = '';
+    try {
+      const response = await fetch(`/api/tse-registry-v2?ts=${Date.now()}`, { cache: 'no-store' });
+      const data = await response.json();
+      if (!response.ok || !data.ok) throw new Error(data.detail || data.error || 'Falha ao carregar base oficial.');
+
+      const records = Array.isArray(data.records) ? data.records : [];
+      const meta = data.meta || {};
+      const firstValidation = meta.truncated === false
+        && meta.complete === true
+        && Number(meta.total) === records.length
+        && Number(meta.uniqueRecords) === records.length
+        && Number(meta.rawRows) === records.length + Number(meta.duplicateRows || 0);
+      if (!firstValidation) throw new Error(`Validação 1 falhou: resposta oficial incompleta (${records.length}/${meta.total ?? 'sem total'} registros).`);
+
+      const identities = records.map((record) => {
+        const registry = String(record.registry || '').trim().toUpperCase();
+        return registry ? `REGISTRY|${registry}` : `ROW|${record.sourceFile || ''}|${record.sourceRow || ''}`;
+      });
+      const secondValidation = identities.every((identity) => !identity.endsWith('||'))
+        && new Set(identities).size === records.length
+        && records.every((record) => String(record.sourceFile || '').toLowerCase().endsWith('.csv'))
+        && String(meta.source || '').includes('pesquisa_eleitoral_2026.zip');
+      if (!secondValidation) throw new Error('Validação 2 falhou: há registros sem identidade, duplicados ou fora da fonte oficial de 2026.');
+
+      state.registry = records;
+      state.registryMeta = { ...meta, validationPasses: 2, validatedRecords: records.length };
+      document.documentElement.dataset.registryValidation = 'passed-twice';
+      window.__POLL_SYSTEM_VALIDATION__ = {
+        version: '2026-07-30.2',
+        chart: 'verified-v2',
+        registry: 'passed-twice',
+        officialRecords: records.length,
+        checkedAt: new Date().toISOString()
+      };
+    } catch (error) {
+      state.registryError = error.message;
+      state.registry = [];
+      state.registryMeta = null;
+      document.documentElement.dataset.registryValidation = 'failed';
+      window.__POLL_SYSTEM_VALIDATION__ = { version: '2026-07-30.2', chart: 'verified-v2', registry: 'failed', error: error.message };
+    } finally {
+      state.registryLoading = false;
+      if (state.view === 'overview') renderOverview();
+      if (OFFICE_VIEW[state.view]) renderOfficeView(state.view, OFFICE_VIEW[state.view]);
+      if (state.view === 'registry') renderRegistry();
+    }
+  };
