@@ -5,17 +5,52 @@
       svg.appendChild(scenarioText);
     });
 
+    const scenarioMode = (poll) => {
+      const text = String(poll?.scenario || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+      if (text.includes('espont')) return 'espontanea';
+      if (text.includes('estim')) return 'estimulada';
+      return 'estimulado';
+    };
+    const comparableSeriesKey = (poll) => `${poll?.round || 1}|${scenarioMode(poll)}|${Object.keys(poll?.values || {}).sort().join('|')}`;
+
     candidateIds.forEach((candidateId) => {
       const candidate = candidateById(candidateId);
-      const points = polls.map((poll, index) => Object.hasOwn(poll.values, candidateId) ? ({ poll, index, value: poll.values[candidateId], x: x(index), y: y(poll.values[candidateId]) }) : null).filter(Boolean);
+      const points = [];
+      const segments = [];
+      let segment = [];
+
+      polls.forEach((poll, index) => {
+        if (!Object.hasOwn(poll.values, candidateId)) {
+          if (segment.length > 1) segments.push(segment);
+          segment = [];
+          return;
+        }
+
+        const point = { poll, index, value: poll.values[candidateId], x: x(index), y: y(poll.values[candidateId]) };
+        const previous = segment.at(-1);
+        const repeatedDate = previous && String(previous.poll.date || '') === String(poll.date || '');
+        const incompatibleScenario = previous && comparableSeriesKey(previous.poll) !== comparableSeriesKey(poll);
+
+        if (repeatedDate || incompatibleScenario) {
+          if (segment.length > 1) segments.push(segment);
+          segment = [];
+        }
+
+        segment.push(point);
+        points.push(point);
+      });
+
+      if (segment.length > 1) segments.push(segment);
       if (!candidate || !points.length) return;
 
-      const path = svgEl('path', {
-        d: points.map((point, index) => `${index ? 'L' : 'M'} ${point.x} ${point.y}`).join(' '),
-        fill: 'none', stroke: candidate.color, 'stroke-width': state.round === 2 ? 5 : 3.5,
-        'stroke-linecap': 'round', 'stroke-linejoin': 'round', class: 'chart-series-line'
+      segments.forEach((seriesPoints) => {
+        const path = svgEl('path', {
+          d: seriesPoints.map((point, index) => `${index ? 'L' : 'M'} ${point.x} ${point.y}`).join(' '),
+          fill: 'none', stroke: candidate.color, 'stroke-width': state.round === 2 ? 5 : 3.5,
+          'stroke-linecap': 'round', 'stroke-linejoin': 'round', class: 'chart-series-line'
+        });
+        svg.appendChild(path);
       });
-      svg.appendChild(path);
 
       points.forEach((point) => {
         const hit = svgEl('circle', { cx: point.x, cy: point.y, r: 14, fill: 'transparent', class: 'chart-hit-area', tabindex: '0', role: 'button', 'aria-label': `${candidate.name}, ${formatNumber(point.value)}%, ${point.poll.institute}, ${point.poll.publication}` });
@@ -109,7 +144,9 @@
     const body = $('pollTableBody');
     if (!body) return;
     const polls = DATA.polls.slice().sort((a, b) => dateValue(b.date) - dateValue(a.date) || a.id.localeCompare(b.id));
-    $('pollTableCount').textContent = `${polls.length} cenários publicados`;
+    const count = $('pollTableCount');
+    count.textContent = `${polls.length} cenários incorporados · cobertura em auditoria`;
+    count.title = 'O total representa os resultados já incorporados ao sistema e não a totalidade de registros existentes no TSE.';
     body.innerHTML = polls.map((poll) => `<tr>
       <td><strong>${escapeHtml(poll.publication)}</strong></td>
       <td><span class="table-badge">${poll.round}º turno</span><small>${escapeHtml(poll.scenario)}</small></td>
