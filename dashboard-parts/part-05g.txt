@@ -1,0 +1,23 @@
+
+  officeParityInnerMarkup = function contextAwareInteractiveOfficeParityMarkup(viewId, context = 'full') {
+    const definition = extendedOfficeDefinitions[viewId];
+    const ui = officeParityState(viewId);
+    const description = `A mesma estrutura da página presidencial aplicada a ${definition.title.toLowerCase()}: filtros, fotos, gráfico temporal, ranking, fontes e catálogo completo.`;
+    const header = headerMarkup(definition.eyebrow, definition.title, description, `<div class="flex flex-wrap gap-2"><span class="status-chip"><i class="bg-emerald-500"></i>${escapeHtml(ui.uf)}</span><span class="status-chip"><i class="bg-blue-500"></i>Dados auditáveis</span></div>`);
+    const simulation = officeParitySeatMarkup(viewId, context === 'overview');
+    const categoryLead = simulation
+      ? `<div class="grid items-stretch gap-4 xl:grid-cols-[minmax(300px,.72fr)_minmax(0,1.28fr)]" data-category-seat-layout="${viewId}"><div data-category-theme class="min-w-0">${header}</div><div data-category-simulation class="min-w-0">${simulation}</div></div>`
+      : header;
+
+    if (context === 'overview') {
+      return `${categoryLead}
+        ${officeParityKpis(viewId)}
+        ${officeParityExplorerMarkup(viewId)}
+        ${officeParityLatestAuditMarkup(viewId)}`;
+    }
+
+    return `${categoryLead}
+      ${officeParityRosterMarkup(viewId)}
+      ${officeParityExplorerMarkup(viewId)}
+      ${officeParityTableMarkup(viewId)}`;
+  };
