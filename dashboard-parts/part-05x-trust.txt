@@ -1,0 +1,144 @@
+
+  // Correção de confiança: cenários incompatíveis não podem formar uma série temporal.
+  const trustAuditPolls = [
+    { id:'datafolha-2026-07-24-r1-principal', round:1, scenario:'Cenário principal', matchup:null, date:'2026-07-24', publication:'24/07/2026', institute:'Datafolha', scope:'Brasil', field:'22 a 24/07/2026', sample:'2.004', margin:'±2 p.p.', registry:'BR-01166/2026', source:'https://www.cnnbrasil.com.br/eleicoes/datafolha-lula-tem-40-das-intencoes-de-voto-no-1o-turno-flavio-32/', values:{ lula:40, flavio:32, caiado:4, zema:3, renan:3, cury:2, rui:1, daciolo:1, samara:1 } },
+    { id:'datafolha-2026-07-24-r2-lula-flavio', round:2, scenario:'Lula × Flávio Bolsonaro', matchup:'lula-flavio', date:'2026-07-24', publication:'24/07/2026', institute:'Datafolha', scope:'Brasil', field:'22 a 24/07/2026', sample:'2.004', margin:'±2 p.p.', registry:'BR-01166/2026', source:'https://www.cnnbrasil.com.br/eleicoes/datafolha-lula-tem-48-das-intencoes-de-voto-no-2o-turno-flavio-43/', values:{ lula:48, flavio:43 } },
+    { id:'quaest-2026-07-15-r2-lula-flavio', round:2, scenario:'Lula × Flávio Bolsonaro', matchup:'lula-flavio', date:'2026-07-15', publication:'15/07/2026', institute:'Genial/Quaest', scope:'Brasil', field:'10 a 13/07/2026', sample:'2.004', margin:'±2 p.p.', registry:'BR-07181/2026', source:'https://www.cnnbrasil.com.br/eleicoes/quaest-lula-tem-45-no-2o-turno-contra-37-de-flavio/', values:{ lula:45, flavio:37 } },
+    { id:'quaest-2026-07-15-r2-lula-caiado', round:2, scenario:'Lula × Ronaldo Caiado', matchup:'lula-caiado', date:'2026-07-15', publication:'15/07/2026', institute:'Genial/Quaest', scope:'Brasil', field:'10 a 13/07/2026', sample:'2.004', margin:'±2 p.p.', registry:'BR-07181/2026', source:'https://www.cnnbrasil.com.br/eleicoes/quaest-lula-tem-45-no-2o-turno-contra-37-de-flavio/', values:{ lula:45, caiado:36 } },
+    { id:'quaest-2026-07-15-r2-lula-zema', round:2, scenario:'Lula × Romeu Zema', matchup:'lula-zema', date:'2026-07-15', publication:'15/07/2026', institute:'Genial/Quaest', scope:'Brasil', field:'10 a 13/07/2026', sample:'2.004', margin:'±2 p.p.', registry:'BR-07181/2026', source:'https://www.cnnbrasil.com.br/eleicoes/quaest-lula-tem-45-no-2o-turno-contra-37-de-flavio/', values:{ lula:45, zema:35 } },
+    { id:'quaest-2026-07-15-r2-lula-renan', round:2, scenario:'Lula × Renan Santos', matchup:'lula-renan', date:'2026-07-15', publication:'15/07/2026', institute:'Genial/Quaest', scope:'Brasil', field:'10 a 13/07/2026', sample:'2.004', margin:'±2 p.p.', registry:'BR-07181/2026', source:'https://www.cnnbrasil.com.br/eleicoes/quaest-lula-tem-45-no-2o-turno-contra-37-de-flavio/', values:{ lula:45, renan:33 } },
+    { id:'rtbd-2026-07-21-r1-principal', round:1, scenario:'Cenário principal', matchup:null, date:'2026-07-21', publication:'21/07/2026', institute:'Real Time Big Data', scope:'Brasil', field:'18 a 20/07/2026', sample:'2.000', margin:'±2 p.p.', registry:'BR-05864/2026', source:'https://www.cnnbrasil.com.br/eleicoes/real-time-big-data-lula-tem-40-no-1o-turno-e-flavio-33/', values:{ lula:40, flavio:33, renan:9, caiado:7 } },
+    { id:'rtbd-2026-07-21-r2-lula-flavio', round:2, scenario:'Lula × Flávio Bolsonaro', matchup:'lula-flavio', date:'2026-07-21', publication:'21/07/2026', institute:'Real Time Big Data', scope:'Brasil', field:'18 a 20/07/2026', sample:'2.000', margin:'±2 p.p.', registry:'BR-05864/2026', source:'https://www.cnnbrasil.com.br/eleicoes/real-time-presidente-2o-turno-julho-2026/', values:{ lula:45, flavio:42 } },
+    { id:'nexus-2026-07-27-r1-principal', round:1, scenario:'Cenário principal', matchup:null, date:'2026-07-27', publication:'27/07/2026', institute:'BTG/Nexus', scope:'Brasil', field:'24 a 26/07/2026', sample:'2.004', margin:'±2 p.p.', registry:'BR-01489/2026', source:'https://www.nexus.fsb.com.br/estudos-divulgados/pesquisa-btg-nexus-de-intencao-de-votos-para-presidente-do-brasil-27-de-julho-de-2026/', values:{ lula:42, flavio:33, caiado:6, renan:5, zema:3 } },
+    { id:'nexus-2026-07-27-r2-lula-flavio', round:2, scenario:'Lula × Flávio Bolsonaro', matchup:'lula-flavio', date:'2026-07-27', publication:'27/07/2026', institute:'BTG/Nexus', scope:'Brasil', field:'24 a 26/07/2026', sample:'2.004', margin:'±2 p.p.', registry:'BR-01489/2026', source:'https://www.nexus.fsb.com.br/estudos-divulgados/pesquisa-btg-nexus-de-intencao-de-votos-para-presidente-do-brasil-27-de-julho-de-2026/', values:{ lula:47, flavio:43 } },
+    { id:'atlas-2026-07-29-r2-lula-flavio', round:2, scenario:'Lula × Flávio Bolsonaro', matchup:'lula-flavio', date:'2026-07-29', publication:'29/07/2026', institute:'AtlasIntel/Bloomberg', scope:'Brasil', field:'Julho de 2026', sample:'Não informado na publicação consultada', margin:'Não informada', registry:'', source:'https://www.reuters.com/world/americas/lula-leads-flavio-bolsonaro-potential-brazil-runoff-poll-shows-2026-07-29/', values:{ lula:49.2, flavio:42.9 } }
+  ];
+
+  if (window.POLL_RESULTS) {
+    const known = new Set(window.POLL_RESULTS.polls.map((poll) => poll.id));
+    trustAuditPolls.forEach((poll) => { if (!known.has(poll.id)) window.POLL_RESULTS.polls.push(poll); });
+    window.POLL_RESULTS.polls.sort((a,b) => dateValue(a.date) - dateValue(b.date) || a.id.localeCompare(b.id));
+    window.POLL_RESULTS.version = '2026-07-30.1';
+    window.POLL_RESULTS.updatedAt = '2026-07-30T13:36:00-03:00';
+    window.POLL_RESULTS.methodology = 'Cada ponto representa um cenário publicado. Cenários alternativos da mesma pesquisa nunca são conectados como evolução temporal.';
+  }
+
+  function trustScenarioSignature(observation) {
+    return `${observation.round}|${Object.keys(observation.values || {}).sort().join('|')}`;
+  }
+
+  officeParityCurrentObservations = function officeParityComparableObservations(viewId) {
+    const ui = officeParityState(viewId);
+    const filtered = officeParityObservations(viewId)
+      .filter((observation) => observation.uf === ui.uf)
+      .filter((observation) => observation.round === ui.round)
+      .filter((observation) => ui.institute === 'all' || observation.institute === ui.institute)
+      .sort((a,b) => dateValue(a.date) - dateValue(b.date) || a.id.localeCompare(b.id));
+    if (ui.scenario !== 'all') return filtered.filter((observation) => observation.scenario === ui.scenario);
+    if (ui.round === 'first') {
+      const perPoll = new Map();
+      filtered.forEach((observation) => {
+        const current = perPoll.get(observation.pollId);
+        if (!current || observation.scenarioIndex < current.scenarioIndex) perPoll.set(observation.pollId, observation);
+      });
+      return [...perPoll.values()].sort((a,b) => dateValue(a.date) - dateValue(b.date) || a.id.localeCompare(b.id));
+    }
+    const counts = new Map();
+    filtered.forEach((observation) => {
+      const signature = trustScenarioSignature(observation);
+      const polls = counts.get(signature) || new Set();
+      polls.add(observation.pollId);
+      counts.set(signature, polls);
+    });
+    const preferred = [...counts.entries()].sort((a,b) => b[1].size - a[1].size || a[0].localeCompare(b[0]))[0]?.[0];
+    return preferred ? filtered.filter((observation) => trustScenarioSignature(observation) === preferred) : filtered;
+  };
+
+  const trustExplorerBase = officeParityExplorerMarkup;
+  officeParityExplorerMarkup = function officeParityExplorerTrusted(viewId) {
+    const ui = officeParityState(viewId);
+    const label = ui.round === 'second' ? 'Confronto comparável mais recorrente' : 'Cenário principal de cada pesquisa';
+    return trustExplorerBase(viewId)
+      .replace('<option value="all">Todos os cenários</option>', `<option value="all">${label}</option>`)
+      .replace('<div class="chart-layout">', '<div class="border-b border-blue-200 bg-blue-50 px-4 py-3 text-xs leading-relaxed text-blue-950" data-trust-methodology><strong class="uppercase">Leitura segura:</strong> cenários alternativos da mesma pesquisa são pontos independentes. No modo automático, o painel escolhe um cenário principal por levantamento e só mantém linhas entre observações comparáveis.</div><div class="chart-layout">');
+  };
+
+  officeParityKpis = function officeParityKpisTrusted(viewId) {
+    const ui = officeParityState(viewId);
+    const observations = officeParityObservations(viewId).filter((observation) => observation.uf === ui.uf);
+    const firstUnique = new Set(observations.filter((observation) => observation.round === 'first').map((observation) => observation.pollId)).size;
+    const secondUnique = new Set(observations.filter((observation) => observation.round === 'second').map((observation) => observation.pollId)).size;
+    const firstScenarios = observations.filter((observation) => observation.round === 'first').length;
+    const secondScenarios = observations.filter((observation) => observation.round === 'second').length;
+    const latest = observations.slice().sort((a,b) => dateValue(b.date) - dateValue(a.date))[0];
+    const official = officeParityRegistryRows(viewId, ui.uf).length;
+    return `<div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      ${kpiMarkup('Pesquisas de 1º turno', String(firstUnique), `${firstScenarios} cenário(s) publicados em ${ui.uf}`, 'emerald')}
+      ${kpiMarkup('Pesquisas de 2º turno', String(secondUnique), secondScenarios ? `${secondScenarios} confronto(s) publicados` : 'não se aplica ou não publicado', 'red')}
+      ${kpiMarkup('Registros oficiais TSE', state.registryLoading ? '…' : formatNumber(official), `cadastros de ${ui.uf}`, 'blue')}
+      ${kpiMarkup('Última publicação', latest?.publication || '—', latest?.institute || 'Sem resultado publicado', 'amber')}
+    </div>`;
+  };
+
+  const trustDrawBase = officeParityDrawChart;
+  officeParityDrawChart = function officeParityDrawChartTrusted(root, viewId) {
+    trustDrawBase(root, viewId);
+    const ui = officeParityState(viewId);
+    const svg = root.querySelector('[data-office-parity-chart]');
+    if (!svg) return;
+    if (ui.scenario === 'all') {
+      const signatures = new Set(officeParityCurrentObservations(viewId).map(trustScenarioSignature));
+      if (signatures.size > 1) qsa('.chart-series-line', svg).forEach((line) => line.remove());
+      svg.dataset.trustLineMode = signatures.size > 1 ? 'points-only' : 'comparable-series';
+    } else svg.dataset.trustLineMode = 'explicit-scenario';
+  };
+
+  chartMotionArrangePortraits = function chartMotionArrangePortraitsTrusted(svg) {
+    const borders = qsa('.chart-candidate-photo-border', svg);
+    if (!borders.length) return;
+    qsa('.chart-photo-connector, .chart-photo-rail', svg).forEach((node) => node.remove());
+    const fallbacks = qsa('.chart-candidate-photo-fallback', svg);
+    const initials = qsa('.chart-candidate-initials', svg);
+    const images = qsa('.chart-candidate-photo', svg);
+    const [viewX, viewY, width, height] = chartMotionViewBox(svg);
+    const largest = Math.max(...borders.map((node) => Number(node.getAttribute('width')) || 34));
+    const minY = Math.max(viewY + largest/2 + 12, 54);
+    const maxY = Math.max(minY, height - 112 - largest/2);
+    const gap = largest + 10;
+    const maxRows = Math.max(1, Math.floor((maxY - minY) / gap) + 1);
+    const columns = Math.max(1, Math.min(3, Math.ceil(borders.length / maxRows)));
+    const rowsPerColumn = Math.ceil(borders.length / columns);
+    const columnGap = largest + 16;
+    const entries = borders.map((border,index) => {
+      const itemWidth = Number(border.getAttribute('width')) || 34;
+      const itemHeight = Number(border.getAttribute('height')) || itemWidth;
+      return { border, fallback:fallbacks[index], initials:initials[index], image:images[index], width:itemWidth, height:itemHeight, originalX:Number(border.getAttribute('x')) + itemWidth/2, originalY:Number(border.getAttribute('y')) + itemHeight/2, stroke:border.getAttribute('stroke') || '#64748b' };
+    }).sort((a,b) => a.originalY - b.originalY);
+    const maxPointX = Math.max(...entries.map((entry) => entry.originalX));
+    const rightX = Math.min(width - largest/2 - 14, maxPointX + Math.max(68, largest + 28));
+    svg.setAttribute('viewBox', `${viewX} ${viewY} ${width} ${height}`);
+    svg.dataset.portraitRailInside = 'true';
+    svg.dataset.portraitRailColumns = String(columns);
+    for (let column=0; column<columns; column+=1) {
+      const slice = entries.slice(column*rowsPerColumn, (column+1)*rowsPerColumn);
+      const railX = rightX - column*columnGap;
+      const rail = svgEl('line', { x1:railX, y1:minY-largest/2, x2:railX, y2:maxY+largest/2, class:'chart-photo-rail' });
+      svg.insertBefore(rail, svg.querySelector('defs')?.nextSibling || svg.firstChild?.nextSibling || null);
+      chartMotionSpreadY(slice, minY, maxY, gap).forEach((entry,rowIndex) => {
+        const halfW = entry.width/2;
+        const halfH = entry.height/2;
+        const delay = 620 + column*90 + rowIndex*55;
+        const targetX = railX-halfW;
+        const targetY = entry.labelY-halfH;
+        const connectorEndX = entry.originalX <= railX ? railX-halfW-3 : railX+halfW+3;
+        const connector = svgEl('path', { d:`M ${entry.originalX} ${entry.originalY} C ${(entry.originalX+connectorEndX)/2} ${entry.originalY}, ${(entry.originalX+connectorEndX)/2} ${entry.labelY}, ${connectorEndX} ${entry.labelY}`, stroke:entry.stroke, 'stroke-width':1.6, class:'chart-photo-connector', style:`--chart-delay:${delay}ms` });
+        svg.insertBefore(connector, entry.fallback || entry.border);
+        [entry.fallback, entry.image, entry.border].filter(Boolean).forEach((node) => { node.setAttribute('x',targetX); node.setAttribute('y',targetY); node.setAttribute('data-chart-motion','portrait'); node.style.setProperty('--chart-delay',`${delay}ms`); });
+        if (entry.image) entry.image.removeAttribute('clip-path');
+        if (entry.initials) { entry.initials.setAttribute('x',railX); entry.initials.setAttribute('y',entry.labelY+4); entry.initials.setAttribute('data-chart-motion','portrait'); entry.initials.style.setProperty('--chart-delay',`${delay}ms`); }
+        entry.border.dataset.originalPointX = String(entry.originalX);
+        entry.border.dataset.originalPointY = String(entry.originalY);
+        entry.border.dataset.railColumn = String(column);
+      });
+    }
+  };
