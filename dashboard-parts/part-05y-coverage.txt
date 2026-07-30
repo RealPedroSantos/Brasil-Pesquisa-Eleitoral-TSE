@@ -1,0 +1,34 @@
+
+  function trustRegistryNumber(value) {
+    return String(value || '').toUpperCase().replace(/\s+/g, '').trim();
+  }
+
+  function trustCoverageMarkup() {
+    const catalog = window.POLL_RESULTS?.polls || [];
+    const uniquePolls = new Set(catalog.map((poll) => `${poll.registry || poll.institute}|${poll.date}|${poll.scope}`));
+    const catalogRegistries = new Set(catalog.map((poll) => trustRegistryNumber(poll.registry)).filter(Boolean));
+    const officialRows = state.registry.filter((row) => String(row.office || '').toLowerCase().includes('presidente'));
+    const unmatched = officialRows.filter((row) => {
+      const registry = trustRegistryNumber(row.registry || row.registration);
+      return registry && !catalogRegistries.has(registry);
+    });
+    return `<article class="news-card" data-trust-coverage>
+      <div class="news-card-heading border-t-4 border-t-blue-500"><div><span>Confiança e cobertura</span><strong>Auditoria explícita do catálogo</strong></div><small>Atualizada em 30/07/2026</small></div>
+      <div class="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-4">
+        ${kpiMarkup('Cenários verificados', formatNumber(catalog.length), 'cada cenário permanece separado', 'emerald')}
+        ${kpiMarkup('Levantamentos únicos', formatNumber(uniquePolls.size), 'data, instituto, abrangência e registro', 'blue')}
+        ${kpiMarkup('Registros presidenciais TSE', state.registryLoading ? '…' : formatNumber(officialRows.length), 'cadastros oficiais encontrados', 'amber')}
+        ${kpiMarkup('Sem resultado vinculado', state.registryLoading ? '…' : formatNumber(unmatched.length), 'não entram no gráfico', 'red')}
+      </div>
+      <div class="border-t border-slate-200 bg-slate-50 p-4 text-sm leading-relaxed text-slate-700"><strong class="text-slate-950">O painel não declara cobertura total.</strong> Registro no TSE confirma o cadastro, mas não contém necessariamente os percentuais divulgados. Resultados só entram após uma publicação verificável; lacunas permanecem expostas.</div>
+      ${unmatched.length ? `<details class="border-t border-slate-200 bg-white"><summary class="cursor-pointer p-4 text-sm font-black uppercase text-slate-800">Ver até 30 registros ainda sem resultado vinculado</summary><div class="grid gap-2 border-t border-slate-200 p-4 md:grid-cols-2">${unmatched.slice(0,30).map((row) => `<div class="border border-slate-200 bg-slate-50 p-3"><strong class="block text-sm text-slate-950">${escapeHtml(row.registry || row.registration || 'Registro')}</strong><small class="mt-1 block text-xs text-slate-500">${escapeHtml(row.institute || row.company || 'Instituto não informado')} · ${escapeHtml(row.uf || 'BR')} · ${escapeHtml(row.publication || row.disclosure || 'data não informada')}</small></div>`).join('')}</div></details>` : ''}
+    </article>`;
+  }
+
+  const trustSourcesBase = renderSources;
+  renderSources = function renderSourcesWithTrustAudit() {
+    trustSourcesBase();
+    const host = $('sources');
+    if (host && !host.querySelector('[data-trust-coverage]')) host.insertAdjacentHTML('afterbegin', trustCoverageMarkup());
+    if (host && typeof dataMotionEnhance === 'function') dataMotionEnhance(host);
+  };
