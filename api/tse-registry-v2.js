@@ -46,7 +46,7 @@ function repair(value) {
 function cleanKey(value) { return repair(value).replace(/^\uFEFF/, '').trim().toUpperCase(); }
 function cleanValue(value) {
   const result = repair(value).trim();
-  return ['#NULO#', '#NE', '-1'].includes(result.toUpperCase()) ? '' : result;
+  return ['#NULO#', '#NULO', '#NE#', '#NE', '-1'].includes(result.toUpperCase()) ? '' : result;
 }
 function first(record, aliases) {
   for (const alias of aliases) if (cleanValue(record[alias])) return cleanValue(record[alias]);
@@ -78,8 +78,11 @@ function dateKey(value) {
   return match ? `${match[3]}-${match[2]}-${match[1]}` : String(value || '');
 }
 
-function normalizeRecord(raw, fallbackUf) {
-  const registry = first(raw, ['NR_PESQUISA','NR_REGISTRO','NR_REGISTRO_PESQUISA','NUMERO_PESQUISA','NUMERO_REGISTRO','CD_PESQUISA']) || patternValue(raw, /REGISTRO.*PESQUISA|PESQUISA.*REGISTRO|^NR_.*PESQUISA$/);
+function normalizeRecord(raw, fallbackUf, sourceFile, sourceRow) {
+  const registry = first(raw, [
+    'NR_PROTOCOLO_REGISTRO', 'NR_REGISTRO_PESQUISA', 'NR_PESQUISA', 'NR_REGISTRO',
+    'NUMERO_PESQUISA', 'NUMERO_REGISTRO', 'CD_PESQUISA', 'DS_PROTOCOLO_REGISTRO'
+  ]) || patternValue(raw, /PROTOCOLO.*REGISTRO|REGISTRO.*PESQUISA|PESQUISA.*REGISTRO|^NR_.*PESQUISA$/);
   const officeRaw = first(raw, ['DS_CARGO','DS_CARGO_PESQUISADO','CARGO','NM_CARGO']) || patternValue(raw, /CARGO/);
   const uf = first(raw, ['SG_UF','UF','SG_UF_PESQUISA']) || fallbackUf;
   const municipality = first(raw, ['NM_MUNICIPIO','MUNICIPIO','NM_LOCALIDADE']);
@@ -102,35 +105,21 @@ function normalizeRecord(raw, fallbackUf) {
   const statisticianRegistry = first(raw, ['NR_REGISTRO_ESTATISTICO','NR_CONRE','REGISTRO_ESTATISTICO']) || patternValue(raw, /REGISTRO.*ESTATIST|NR_.*CONRE/);
   const methodology = first(raw, ['DS_METODOLOGIA','METODOLOGIA','DS_PLANO_AMOSTRAL','DS_METODO_PESQUISA']) || patternValue(raw, /METODOLOGIA|PLANO.*AMOSTRAL|METODO.*PESQUISA/);
   return {
-    registry,
-    office: normalizeOffice(officeRaw),
-    uf,
-    location,
-    institute,
-    company,
-    contractor,
-    contractorDocument,
-    fieldStart,
-    fieldEnd,
-    publication,
-    sample,
-    margin,
-    status: status || 'Registrada',
-    scope,
-    amount,
-    statistician,
-    statisticianRegistry,
-    methodology
+    registry, office: normalizeOffice(officeRaw), uf, location, institute, company, contractor,
+    contractorDocument, fieldStart, fieldEnd, publication, sample, margin, status: status || 'Registrada',
+    scope, amount, statistician, statisticianRegistry, methodology, sourceFile, sourceRow
   };
 }
 
 function recordKey(record) {
-  return [record.registry, record.office, record.uf, record.location, record.institute, record.company, record.fieldStart, record.fieldEnd, record.publication, record.sample].map((value) => String(value || '').trim().toUpperCase()).join('|');
+  const registry = String(record.registry || '').trim().toUpperCase();
+  if (registry) return `REGISTRY|${registry}`;
+  return `ROW|${record.sourceFile}|${record.sourceRow}`;
 }
 
 async function loadRegistry() {
   if (cache && Date.now() - cacheAt < CACHE_TTL) return cache;
-  const response = await fetch(DATA_URL, { headers: { 'User-Agent': 'Pesquisas-Eleitorais-2026/4.0' }, cache: 'no-store' });
+  const response = await fetch(DATA_URL, { headers: { 'User-Agent': 'Pesquisas-Eleitorais-2026/5.0' }, cache: 'no-store' });
   if (!response.ok) throw new Error(`TSE respondeu HTTP ${response.status}`);
   const zip = new AdmZip(Buffer.from(await response.arrayBuffer()));
   const entries = zip.getEntries().filter((entry) => !entry.isDirectory && entry.entryName.toLowerCase().endsWith('.csv'));
@@ -138,6 +127,11 @@ async function loadRegistry() {
 
   const seen = new Set();
   const records = [];
+  const headersByFile = {};
+  let rawRows = 0;
+  let duplicateRows = 0;
+  let missingRegistry = 0;
+
   for (const entry of entries) {
     const raw = entry.getData();
     const utf8 = iconv.decode(raw, 'utf8');
@@ -147,22 +141,44 @@ async function loadRegistry() {
     const delimiter = (firstLine.match(/;/g) || []).length >= (firstLine.match(/,/g) || []).length ? ';' : ',';
     const rows = parseCsv(text, delimiter);
     const headers = (rows.shift() || []).map(cleanKey);
+    headersByFile[entry.entryName] = headers;
     const ufMatch = entry.entryName.match(/_([A-Z]{2}|BR)\.csv$/i);
     const fallbackUf = ufMatch ? ufMatch[1].toUpperCase() : '';
-    for (const values of rows) {
-      const rawRecord = Object.fromEntries(headers.map((header, index) => [header, values[index] || '']));
-      const record = { ...normalizeRecord(rawRecord, fallbackUf), sourceFile: entry.entryName };
+
+    rows.forEach((values, index) => {
+      rawRows += 1;
+      const rawRecord = Object.fromEntries(headers.map((header, column) => [header, values[column] || '']));
+      const record = normalizeRecord(rawRecord, fallbackUf, entry.entryName, index + 2);
+      if (!record.registry) missingRegistry += 1;
       const key = recordKey(record);
-      if (!key.replace(/\|/g, '') || seen.has(key)) continue;
+      if (seen.has(key)) { duplicateRows += 1; return; }
       seen.add(key);
       records.push(record);
-    }
+    });
   }
 
-  records.sort((a, b) => dateKey(b.publication || b.fieldEnd).localeCompare(dateKey(a.publication || a.fieldEnd)));
+  records.sort((a, b) => dateKey(b.publication || b.fieldEnd).localeCompare(dateKey(a.publication || a.fieldEnd)) || String(a.registry).localeCompare(String(b.registry)));
   const byOffice = records.reduce((acc, item) => { acc[item.office] = (acc[item.office] || 0) + 1; return acc; }, {});
   const byUf = records.reduce((acc, item) => { const key = item.uf || 'BR'; acc[key] = (acc[key] || 0) + 1; return acc; }, {});
-  cache = { records, meta: { total: records.length, byOffice, byUf, source: DATA_URL, generatedAt: new Date().toISOString(), files: entries.map((entry) => entry.entryName), dedupe: 'registry+office+uf+location+institute+period+sample' } };
+  cache = {
+    records,
+    meta: {
+      total: records.length,
+      rawRows,
+      uniqueRecords: records.length,
+      duplicateRows,
+      missingRegistry,
+      complete: records.length + duplicateRows === rawRows,
+      truncated: false,
+      byOffice,
+      byUf,
+      source: DATA_URL,
+      generatedAt: new Date().toISOString(),
+      files: entries.map((entry) => entry.entryName),
+      headersByFile,
+      dedupe: 'número oficial do registro; na ausência, arquivo+linha sem descarte silencioso'
+    }
+  };
   cacheAt = Date.now();
   return cache;
 }
