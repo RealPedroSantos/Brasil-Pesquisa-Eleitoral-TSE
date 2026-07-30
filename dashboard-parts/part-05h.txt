@@ -1,0 +1,8 @@
+
+  const electionDataBaseFetch = window.fetch.bind(window);
+  window.fetch = function electionDataEnrichedFetch(input, init) {
+    if (location.hostname !== 'example.test' && typeof input === 'string' && input.startsWith('/api/election-results?')) {
+      return electionDataBaseFetch(input.replace('/api/election-results?', '/api/election-results-v2?'), init);
+    }
+    return electionDataBaseFetch(input, init);
+  };
