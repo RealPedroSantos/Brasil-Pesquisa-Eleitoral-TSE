@@ -9,10 +9,15 @@ const dashboard = fs.readFileSync('public/dashboard.js', 'utf8');
 
 const requiredMarkers = [
   'officeParityComparableObservations',
+  'drawTrustSafeOfficeParityChart',
+  'repeatedDate || incompatibleComposition',
   'data-trust-methodology',
   "svg.dataset.trustLineMode = signatures.size > 1 ? 'points-only' : 'comparable-series'",
   "svg.dataset.portraitRailInside = 'true'",
   'data-trust-coverage',
+  'trustExtractRegistryNumbers',
+  'Auditoria explícita de Presidência e estados',
+  'O painel não declara cobertura total.',
   'governor-ce-quaest-2026-04-30',
   'governor-go-quaest-2026-04-30',
   'governor-pi-atlas-2026-07-21',
@@ -33,4 +38,4 @@ if (!dashboard.includes('Cenários alternativos da mesma pesquisa nunca são con
   fail('aviso metodológico explícito ausente');
 }
 
-console.log('Teste de confiança: cenários comparáveis, retratos internos e cobertura auditada: OK');
+console.log('Teste de confiança: cenários comparáveis, datas repetidas, retratos internos e cobertura nacional auditada: OK');
