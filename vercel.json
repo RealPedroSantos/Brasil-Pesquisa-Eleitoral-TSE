@@ -8,7 +8,8 @@
     "api/tse-registry-v2.js": { "maxDuration": 30 },
     "api/sources.js": { "maxDuration": 15 },
     "api/election-results.js": { "maxDuration": 30 },
-    "api/election-results-v2.js": { "maxDuration": 30 }
+    "api/election-results-v2.js": { "maxDuration": 30 },
+    "api/election-section-detail.js": { "maxDuration": 30 }
   },
   "rewrites": [
     { "source": "/api/election-results", "destination": "/api/election-results-v2" }
