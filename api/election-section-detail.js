@@ -10,7 +10,7 @@ function send(res, status, payload, cache = 'public, s-maxage=86400, stale-while
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.setHeader('Cache-Control', cache);
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('X-Election-Section-Source', 'TSE-EA18-EA17');
+  res.setHeader('X-Election-Section-Source', 'TSE-EA18-BU');
   return res.end(JSON.stringify(payload));
 }
 
@@ -38,7 +38,7 @@ async function fetchResponse(url, timeoutMs = 12000) {
       cache: 'no-store',
       headers: {
         Accept: 'application/json, text/plain, */*',
-        'User-Agent': 'Brasil-Pesquisa-Eleitoral-TSE/3.0'
+        'User-Agent': 'Brasil-Pesquisa-Eleitoral-TSE/3.1'
       }
     });
   } finally {
@@ -69,29 +69,70 @@ function humanFileType(filename) {
   if (lower.endsWith('.imgbu')) return 'Imagem do Boletim de Urna';
   if (lower.endsWith('.bu')) return 'Boletim de Urna';
   if (lower.endsWith('.rdv')) return 'Registro Digital do Voto';
+  if (lower.endsWith('.vscmr')) return 'Correspondência seção/urna';
   if (lower.includes('log') || lower.endsWith('.logjez')) return 'Log da urna';
   if (lower.endsWith('.json')) return 'Arquivo JSON';
   if (lower.endsWith('.zip')) return 'Pacote compactado';
   return 'Arquivo oficial';
 }
 
+function dedupeFiles(rows) {
+  return rows.filter((item, index, list) => list.findIndex((row) => row.url === item.url) === index);
+}
+
 function collectOfficialFiles(payload, directoryUrl) {
+  const structured = [];
+  const groups = Array.isArray(payload?.hashes) ? payload.hashes : [];
+
+  groups.forEach((group, urnIndex) => {
+    const hash = text(group?.hash ?? group?.hs ?? group?.h);
+    const filenames = [
+      ...(Array.isArray(group?.nmarq) ? group.nmarq : []),
+      ...(Array.isArray(group?.arquivos) ? group.arquivos : [])
+    ].map(text).filter(Boolean);
+
+    filenames.forEach((filename) => {
+      if (filename.toLowerCase().endsWith('-aux.json')) return;
+      const folder = hash ? `${directoryUrl}/${encodeURIComponent(hash)}` : directoryUrl;
+      structured.push({
+        filename,
+        type: humanFileType(filename),
+        url: /^https?:\/\//i.test(filename) ? filename : `${folder}/${encodeURIComponent(filename)}`,
+        hash: hash || null,
+        urnIndex: urnIndex + 1,
+        receivedDate: text(group?.dr ?? group?.dataRecebimento),
+        receivedTime: text(group?.hr ?? group?.horaRecebimento),
+        status: text(group?.st ?? group?.status)
+      });
+    });
+  });
+
+  if (structured.length) return dedupeFiles(structured);
+
   const names = new Set();
   walk(payload, (value) => {
     if (typeof value !== 'string') return;
     const decoded = value.trim();
-    const matches = decoded.match(/(?:https?:\/\/[^\s"'<>]+|[\w.-]+\.(?:imgbu|bu|rdv|logjez|json|zip|pdf))/gi) || [];
+    const matches = decoded.match(/(?:https?:\/\/[^\s"'<>]+|[\w.-]+\.(?:imgbu|bu|rdv|vscmr|logjez|json|zip|pdf))/gi) || [];
     matches.forEach((match) => names.add(match));
   });
 
-  return [...names]
+  return dedupeFiles([...names]
     .filter((name) => !name.toLowerCase().endsWith('-aux.json'))
     .map((name) => {
-      const url = /^https?:\/\//i.test(name) ? name : `${directoryUrl}/${name}`;
+      const url = /^https?:\/\//i.test(name) ? name : `${directoryUrl}/${encodeURIComponent(name)}`;
       const filename = url.split('/').pop();
-      return { filename, type: humanFileType(filename), url };
-    })
-    .filter((item, index, rows) => rows.findIndex((row) => row.url === item.url) === index);
+      return {
+        filename,
+        type: humanFileType(filename),
+        url,
+        hash: null,
+        urnIndex: 1,
+        receivedDate: '',
+        receivedTime: '',
+        status: ''
+      };
+    }));
 }
 
 function findCandidateArrays(value, output = []) {
@@ -147,19 +188,15 @@ function extractCandidates(payload) {
 }
 
 async function firstAvailableJson(urls) {
-  for (const url of urls) {
-    try {
-      const response = await fetchResponse(url, 6500);
-      if (!response.ok) continue;
-      const type = response.headers.get('content-type') || '';
-      if (!type.includes('json')) continue;
-      const payload = await response.json();
-      return { url, payload };
-    } catch {
-      // Tenta o próximo padrão oficial conhecido.
-    }
-  }
-  return null;
+  const trials = await Promise.allSettled(urls.map(async (url) => {
+    const response = await fetchResponse(url, 3000);
+    if (!response.ok) throw new Error(`TSE ${response.status}`);
+    const type = response.headers.get('content-type') || '';
+    if (!type.includes('json')) throw new Error('Não é JSON');
+    return { url, payload: await response.json() };
+  }));
+  const available = trials.find((trial) => trial.status === 'fulfilled');
+  return available?.value || null;
 }
 
 async function historicalSectionDetail(query) {
@@ -235,7 +272,7 @@ async function liveSectionDetail(query) {
     files: [],
     sourceUrl: commonUrl,
     note: is2026
-      ? 'A configuração 2026 foi detectada. Os arquivos por seção serão consultados quando a estrutura EA18 estiver disponível.'
+      ? 'A configuração 2026 foi detectada. Os arquivos por seção serão consultados quando a estrutura oficial estiver disponível.'
       : 'A apuração de 2026 ainda não foi aberta pelo TSE. Nenhum voto de seção é simulado.',
     checkedAt: new Date().toISOString()
   };
