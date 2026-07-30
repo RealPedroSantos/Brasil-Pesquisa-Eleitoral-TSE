@@ -1,0 +1,88 @@
+
+  const trustSeriesBaseOfficeParityDrawChart = officeParityDrawChart;
+
+  officeParityDrawChart = function drawTrustSafeOfficeParityChart(root, viewId) {
+    trustSeriesBaseOfficeParityDrawChart(root, viewId);
+
+    const svg = root.querySelector('[data-office-parity-chart]');
+    if (!svg) return;
+
+    const ui = officeParityState(viewId);
+    const observations = officeParityCurrentObservations(viewId);
+    const roster = officeParityRoster(viewId, ui.uf);
+    const candidateMap = new Map(roster.map((candidate) => [candidate.id, candidate]));
+    const candidateIds = unique(observations.flatMap((observation) => Object.keys(observation.values)))
+      .filter((id) => ui.selectedCandidates.has(id));
+
+    const width = Math.max(960, observations.length * 150 + 180);
+    const height = candidateIds.length > 10 ? 560 : 500;
+    const pad = { left: 58, right: 54, top: 42, bottom: 98 };
+    const plotW = width - pad.left - pad.right;
+    const plotH = height - pad.top - pad.bottom;
+    const rawMax = Math.max(0, ...observations.flatMap((observation) => Object.values(observation.values)));
+    const maxY = Math.max(20, Math.ceil((rawMax + 5) / 10) * 10);
+    const x = (index) => pad.left + (observations.length <= 1 ? plotW / 2 : index / (observations.length - 1) * plotW);
+    const y = (value) => pad.top + plotH - (Number(value) / maxY) * plotH;
+    const dateKey = (observation) => String(observation.date || observation.publication || 'sem-data');
+    const comparisonKey = (observation) => `${observation.round || ui.round}|${Object.keys(observation.values || {}).sort().join('|')}`;
+
+    svg.querySelectorAll('.chart-series-line').forEach((path) => path.remove());
+    const anchor = svg.querySelector('.chart-point');
+    let pathIndex = 0;
+
+    candidateIds.forEach((candidateId) => {
+      const candidate = candidateMap.get(candidateId);
+      if (!candidate) return;
+
+      const segments = [];
+      let segment = [];
+
+      observations.forEach((observation, index) => {
+        if (!Object.hasOwn(observation.values, candidateId)) {
+          if (segment.length > 1) segments.push(segment);
+          segment = [];
+          return;
+        }
+
+        const point = {
+          observation,
+          x: x(index),
+          y: y(observation.values[candidateId])
+        };
+        const previous = segment.at(-1);
+        const repeatedDate = previous && dateKey(previous.observation) === dateKey(observation);
+        const incompatibleComposition = previous && comparisonKey(previous.observation) !== comparisonKey(observation);
+
+        if (repeatedDate || incompatibleComposition) {
+          if (segment.length > 1) segments.push(segment);
+          segment = [];
+        }
+
+        segment.push(point);
+      });
+
+      if (segment.length > 1) segments.push(segment);
+
+      segments.forEach((points) => {
+        const path = svgEl('path', {
+          d: points.map((point, index) => `${index ? 'L' : 'M'} ${point.x} ${point.y}`).join(' '),
+          fill: 'none',
+          stroke: candidate.color,
+          'stroke-width': ui.round === 'second' ? 5 : 3.5,
+          'stroke-linecap': 'round',
+          'stroke-linejoin': 'round',
+          class: 'chart-series-line',
+          pathLength: '1',
+          'data-chart-motion': 'line',
+          style: `--chart-delay:${pathIndex * 80}ms`
+        });
+        pathIndex += 1;
+        svg.insertBefore(path, anchor || null);
+      });
+    });
+
+    const note = root.querySelector('[data-office-parity-explorer] .border-t.border-slate-800 p');
+    if (note) {
+      note.textContent = 'As linhas conectam apenas medições comparáveis do mesmo candidato em datas diferentes. Cenários alternativos da mesma publicação permanecem separados e não representam média, projeção ou tendência ponderada.';
+    }
+  };
