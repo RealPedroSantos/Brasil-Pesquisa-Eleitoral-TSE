@@ -1,0 +1,328 @@
+
+  const seatInteractiveStyleId = 'seat-interactive-system';
+
+  function seatInteractiveInstallStyles() {
+    if (document.getElementById(seatInteractiveStyleId)) return;
+    const style = document.createElement('style');
+    style.id = seatInteractiveStyleId;
+    style.textContent = `
+      @keyframes seatInteractivePop {
+        0% { transform: scale(.72); opacity: .45; }
+        65% { transform: scale(1.32); opacity: 1; }
+        100% { transform: scale(1.12); opacity: 1; }
+      }
+      @keyframes seatInteractivePanel {
+        0% { transform: translateY(8px); opacity: .45; }
+        100% { transform: translateY(0); opacity: 1; }
+      }
+      @keyframes seatInteractiveBar {
+        0% { transform: scaleX(.35); }
+        70% { transform: scaleX(1.06); }
+        100% { transform: scaleX(1); }
+      }
+      [data-category-seat-layout] > * { min-width: 0; }
+      [data-seat-party] { cursor: pointer; }
+      [data-seat-simulation] circle[data-seat-party] {
+        transition: opacity 220ms ease, transform 220ms ease, stroke-width 220ms ease, filter 220ms ease;
+        transform-box: fill-box;
+        transform-origin: center;
+      }
+      [data-seat-simulation].has-seat-selection circle[data-seat-party].is-seat-dimmed {
+        opacity: .12 !important;
+        transform: scale(.72);
+        filter: grayscale(.8);
+      }
+      [data-seat-simulation] circle[data-seat-party].is-seat-selected {
+        opacity: 1 !important;
+        stroke: #0f172a;
+        stroke-width: 2.5px;
+        filter: drop-shadow(0 2px 3px rgba(15,23,42,.28));
+        animation: seatInteractivePop 440ms cubic-bezier(.2,.85,.2,1.2) both;
+        animation-delay: var(--seat-click-delay, 0ms);
+      }
+      .seat-party-control {
+        width: 100%;
+        border: 1px solid #e2e8f0;
+        background: #fff;
+        padding: .55rem .65rem;
+        text-align: left;
+        transition: border-color 180ms ease, background-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+      }
+      .seat-party-control:hover,
+      .seat-party-control:focus-visible {
+        border-color: var(--seat-party-color, #10b981);
+        background: #f8fafc;
+        transform: translateX(2px);
+        outline: 2px solid #a7f3d0;
+        outline-offset: 1px;
+      }
+      .seat-party-control.is-active {
+        border-color: var(--seat-party-color, #10b981);
+        background: #f0fdf4;
+        box-shadow: inset 4px 0 0 var(--seat-party-color, #10b981);
+        transform: translateX(3px);
+      }
+      .seat-party-control.is-active [data-seat-party-bar] {
+        animation: seatInteractiveBar 460ms cubic-bezier(.2,.8,.2,1) both;
+      }
+      [data-seat-inspector].is-seat-inspector-active {
+        animation: seatInteractivePanel 320ms ease both;
+      }
+      [data-seat-reset] {
+        transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease;
+      }
+      [data-seat-reset]:hover,
+      [data-seat-reset]:focus-visible {
+        border-color: #059669;
+        background: #ecfdf5;
+        color: #065f46;
+        outline: 2px solid #a7f3d0;
+        outline-offset: 2px;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        [data-seat-simulation] circle[data-seat-party],
+        [data-seat-simulation] circle[data-seat-party].is-seat-selected,
+        .seat-party-control,
+        .seat-party-control.is-active [data-seat-party-bar],
+        [data-seat-inspector].is-seat-inspector-active {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  const seatInteractiveOriginalHemicycleSvg = extendedHemicycleSvg;
+  extendedHemicycleSvg = function interactiveHemicycleSvg(model) {
+    const partyIndexes = new Map();
+    return seatInteractiveOriginalHemicycleSvg(model).replace(/<circle([^>]*)><title>([^<]+)<\/title><\/circle>/g, (match, attributes, party) => {
+      const index = (partyIndexes.get(party) || 0) + 1;
+      partyIndexes.set(party, index);
+      return `<circle${attributes} data-seat-party="${party}" data-seat-index="${index}" tabindex="0" role="button" aria-label="Cadeira ${index} — ${party}"><title>${party}</title></circle>`;
+    });
+  };
+
+  function seatInteractivePartyControls(model) {
+    const maxSeats = Math.max(1, ...model.parties.map((item) => item.seats));
+    return model.parties.map((item) => {
+      const share = model.total ? (item.seats / model.total) * 100 : 0;
+      const color = extendedColor(item.party);
+      return `<button type="button" class="seat-party-control" data-seat-party="${escapeHtml(item.party)}" data-seat-party-control data-seat-seats="${item.seats}" data-seat-share="${share.toFixed(2)}" data-seat-color="${color}" aria-pressed="false" style="--seat-party-color:${color}">
+        <span class="grid grid-cols-[minmax(58px,auto)_1fr_auto] items-center gap-2">
+          <strong class="truncate text-xs text-slate-800">${escapeHtml(item.party)}</strong>
+          <span class="h-2 overflow-hidden bg-slate-100"><i data-seat-party-bar class="block h-full origin-left" style="width:${(item.seats / maxSeats) * 100}%;background:${color}"></i></span>
+          <b class="font-display text-base text-slate-950">${item.seats}</b>
+        </span>
+        <small class="mt-1 block text-[10px] font-bold uppercase tracking-wide text-slate-500">${share.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}% da casa</small>
+      </button>`;
+    }).join('');
+  }
+
+  function seatInteractiveSimulationMarkup(model, kind, compact = true) {
+    const partyCount = model.parties.length;
+    return `<section class="h-full w-full border border-slate-200 bg-white" data-seat-simulation="${kind}" data-seat-compact="${compact ? 'true' : 'false'}" data-seat-total="${model.total}" data-seat-party-count="${partyCount}">
+      <div class="flex flex-col gap-2 border-b border-slate-200 bg-slate-50 p-3 sm:flex-row sm:items-start sm:justify-between">
+        <div class="min-w-0"><span class="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-700">Simulação metodológica</span><h3 class="mt-1 font-display text-xl font-black uppercase text-slate-950">${escapeHtml(model.title)}</h3><p class="mt-1 text-xs leading-relaxed text-slate-600">${escapeHtml(model.basis)}</p></div>
+        <button type="button" data-seat-reset class="shrink-0 border border-emerald-600 bg-emerald-50 px-2 py-1 text-left font-display text-sm font-black uppercase text-emerald-900" aria-label="Limpar seleção e mostrar todas as cadeiras"><span class="block">${escapeHtml(model.contestedLabel)}</span><small class="mt-0.5 block font-sans text-[9px] font-bold tracking-wide">Clique para limpar</small></button>
+      </div>
+      <div class="grid items-start gap-3 p-3 lg:grid-cols-[minmax(0,1fr)_230px]">
+        <div class="min-w-0">
+          <div class="mx-auto w-full max-w-[560px]">${extendedHemicycleSvg(model)}</div>
+          <p class="mt-2 text-center text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">Clique em uma cadeira, partido ou barra para explorar</p>
+        </div>
+        <div class="space-y-2">
+          <aside data-seat-inspector aria-live="polite" class="border-l-4 border-emerald-500 bg-slate-50 p-3">
+            <div class="flex items-center gap-2"><i data-seat-inspector-swatch class="h-3 w-3 bg-emerald-500"></i><span data-seat-inspector-eyebrow class="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-500">Visão geral</span></div>
+            <strong data-seat-inspector-title class="mt-1 block font-display text-lg uppercase text-slate-950">Explore a composição</strong>
+            <div class="mt-3 grid grid-cols-3 gap-2">
+              <span><small class="block text-[9px] font-bold uppercase text-slate-500">Cadeiras</small><b data-seat-inspector-seats class="font-display text-xl text-slate-950">${model.total}</b></span>
+              <span><small class="block text-[9px] font-bold uppercase text-slate-500">Participação</small><b data-seat-inspector-share class="font-display text-xl text-slate-950">100%</b></span>
+              <span><small class="block text-[9px] font-bold uppercase text-slate-500">Partidos</small><b data-seat-inspector-rank class="font-display text-xl text-slate-950">${partyCount}</b></span>
+            </div>
+            <p data-seat-inspector-copy class="mt-2 text-xs leading-relaxed text-slate-600">Selecione uma bancada para destacar suas cadeiras e consultar posição, participação e diferença para a maior bancada.</p>
+          </aside>
+          <div class="max-h-[270px] space-y-1.5 overflow-y-auto pr-1" data-seat-party-list>${seatInteractivePartyControls(model)}</div>
+        </div>
+      </div>
+      <details class="border-t border-slate-200 bg-slate-50 p-3 text-xs leading-relaxed text-slate-700"><summary class="cursor-pointer font-bold uppercase tracking-wide text-slate-800">Metodologia e limite do modelo</summary><p class="mt-2">${escapeHtml(model.note)}</p>${model.source ? `<a class="mt-2 inline-flex min-h-9 items-center border border-slate-300 bg-white px-3 font-bold uppercase text-slate-800" href="${escapeHtml(model.source)}" target="_blank" rel="noopener noreferrer">Abrir fonte da base</a>` : ''}</details>
+    </section>`;
+  }
+
+  extendedSeatSimulationMarkup = function interactiveExtendedSeatSimulationMarkup(kind, compact = true) {
+    const model = extendedSeatModels[kind];
+    return model ? seatInteractiveSimulationMarkup(model, kind, compact) : '';
+  };
+
+  officeParityNeutralSeatMarkup = function interactiveNeutralSeatMarkup(viewId, uf, compact = true) {
+    const total = viewId === 'district' ? 24 : officeAssemblySeats[uf];
+    if (!total) return '';
+    const model = {
+      title: viewId === 'district' ? 'Simulação da Câmara Legislativa do DF' : `Simulação da Assembleia Legislativa — ${uf}`,
+      total,
+      contestedLabel: `${total} cadeiras`,
+      basis: 'Estrutura total da casa; a distribuição partidária depende de pesquisa proporcional verificável.',
+      source: 'https://www.tse.jus.br/eleicoes/eleicoes-2026',
+      note: 'As cadeiras aparecem sem distribuição partidária porque ainda não existe base proporcional suficiente no catálogo para sustentar uma projeção. O painel não converte perfis monitorados em votos.',
+      parties: [{ party: 'Sem projeção', seats: total }]
+    };
+    return seatInteractiveSimulationMarkup(model, viewId, compact);
+  };
+
+  function seatInteractiveAnimateNumber(element, target, suffix = '') {
+    if (!element || !Number.isFinite(Number(target))) return;
+    if (element._seatAnimationFrame) cancelAnimationFrame(element._seatAnimationFrame);
+    const value = Number(target);
+    const duration = 420;
+    const startedAt = performance.now();
+    const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    const render = (current) => {
+      const digits = suffix === '%' && !Number.isInteger(value) ? 1 : 0;
+      element.textContent = `${Number(current).toLocaleString('pt-BR', { minimumFractionDigits: digits, maximumFractionDigits: digits })}${suffix}`;
+    };
+    if (reduced) {
+      render(value);
+      return;
+    }
+    render(0);
+    const frame = (now) => {
+      const progress = Math.min(1, (now - startedAt) / duration);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      render(value * eased);
+      if (progress < 1) element._seatAnimationFrame = requestAnimationFrame(frame);
+    };
+    element._seatAnimationFrame = requestAnimationFrame(frame);
+  }
+
+  function seatInteractiveReset(simulation) {
+    simulation.classList.remove('has-seat-selection');
+    delete simulation.dataset.seatSelected;
+    qsa('circle[data-seat-party]', simulation).forEach((circle) => circle.classList.remove('is-seat-selected', 'is-seat-dimmed'));
+    qsa('[data-seat-party-control]', simulation).forEach((button) => {
+      button.classList.remove('is-active');
+      button.setAttribute('aria-pressed', 'false');
+    });
+    const inspector = simulation.querySelector('[data-seat-inspector]');
+    const total = Number(simulation.dataset.seatTotal || 0);
+    const parties = Number(simulation.dataset.seatPartyCount || 0);
+    if (inspector) {
+      inspector.classList.remove('is-seat-inspector-active');
+      void inspector.offsetWidth;
+      inspector.classList.add('is-seat-inspector-active');
+      inspector.style.borderLeftColor = '#10b981';
+      inspector.querySelector('[data-seat-inspector-swatch]').style.background = '#10b981';
+      inspector.querySelector('[data-seat-inspector-eyebrow]').textContent = 'Visão geral';
+      inspector.querySelector('[data-seat-inspector-title]').textContent = 'Explore a composição';
+      inspector.querySelector('[data-seat-inspector-rank]').textContent = String(parties);
+      inspector.querySelector('[data-seat-inspector-copy]').textContent = 'Selecione uma bancada para destacar suas cadeiras e consultar posição, participação e diferença para a maior bancada.';
+      seatInteractiveAnimateNumber(inspector.querySelector('[data-seat-inspector-seats]'), total);
+      seatInteractiveAnimateNumber(inspector.querySelector('[data-seat-inspector-share]'), 100, '%');
+    }
+  }
+
+  function seatInteractiveSelect(simulation, party) {
+    if (!simulation || !party) return;
+    if (simulation.dataset.seatSelected === party) {
+      seatInteractiveReset(simulation);
+      return;
+    }
+
+    const control = qsa('[data-seat-party-control]', simulation).find((button) => button.dataset.seatParty === party);
+    if (!control) return;
+    const seats = Number(control.dataset.seatSeats || 0);
+    const share = Number(control.dataset.seatShare || 0);
+    const color = control.dataset.seatColor || extendedColor(party);
+    const controls = qsa('[data-seat-party-control]', simulation);
+    const ranking = controls.slice().sort((a, b) => Number(b.dataset.seatSeats) - Number(a.dataset.seatSeats));
+    const rank = ranking.findIndex((button) => button.dataset.seatParty === party) + 1;
+    const leaderSeats = Number(ranking[0]?.dataset.seatSeats || 0);
+    const gap = Math.max(0, leaderSeats - seats);
+
+    simulation.dataset.seatSelected = party;
+    simulation.classList.add('has-seat-selection');
+    let selectedIndex = 0;
+    qsa('circle[data-seat-party]', simulation).forEach((circle) => {
+      const active = circle.dataset.seatParty === party;
+      circle.classList.toggle('is-seat-selected', active);
+      circle.classList.toggle('is-seat-dimmed', !active);
+      if (active) {
+        circle.style.setProperty('--seat-click-delay', `${Math.min(260, selectedIndex * 4)}ms`);
+        selectedIndex += 1;
+      }
+    });
+    controls.forEach((button) => {
+      const active = button.dataset.seatParty === party;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-pressed', String(active));
+    });
+
+    const inspector = simulation.querySelector('[data-seat-inspector]');
+    if (!inspector) return;
+    inspector.classList.remove('is-seat-inspector-active');
+    void inspector.offsetWidth;
+    inspector.classList.add('is-seat-inspector-active');
+    inspector.style.borderLeftColor = color;
+    inspector.querySelector('[data-seat-inspector-swatch]').style.background = color;
+    inspector.querySelector('[data-seat-inspector-eyebrow]').textContent = `Bancada selecionada · ${rank}ª posição`;
+    inspector.querySelector('[data-seat-inspector-title]').textContent = party;
+    inspector.querySelector('[data-seat-inspector-rank]').textContent = `#${rank}`;
+    inspector.querySelector('[data-seat-inspector-copy]').textContent = party === 'Sem projeção'
+      ? 'Estas cadeiras representam apenas o tamanho total da casa. Ainda não existe distribuição partidária verificável para este modelo.'
+      : gap === 0
+        ? `${party} aparece como a maior bancada deste modelo metodológico.`
+        : `${party} está a ${gap} cadeira${gap === 1 ? '' : 's'} da maior bancada simulada.`;
+    seatInteractiveAnimateNumber(inspector.querySelector('[data-seat-inspector-seats]'), seats);
+    seatInteractiveAnimateNumber(inspector.querySelector('[data-seat-inspector-share]'), share, '%');
+  }
+
+  function seatInteractiveBind(simulation) {
+    if (!simulation || simulation.dataset.seatInteractiveBound === 'true') return;
+    simulation.dataset.seatInteractiveBound = 'true';
+    simulation.addEventListener('click', (event) => {
+      const reset = event.target.closest?.('[data-seat-reset]');
+      if (reset) {
+        seatInteractiveReset(simulation);
+        return;
+      }
+      const target = event.target.closest?.('[data-seat-party]');
+      if (target) seatInteractiveSelect(simulation, target.dataset.seatParty);
+    });
+    simulation.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      const target = event.target.closest?.('circle[data-seat-party]');
+      if (!target) return;
+      event.preventDefault();
+      seatInteractiveSelect(simulation, target.dataset.seatParty);
+    });
+  }
+
+  const seatInteractivePreviousEnhanceSimulation = dataMotionEnhanceSimulation;
+  dataMotionEnhanceSimulation = function enhanceInteractiveSimulation(simulation) {
+    seatInteractivePreviousEnhanceSimulation(simulation);
+    seatInteractiveBind(simulation);
+  };
+
+  officeParityInnerMarkup = function interactiveOfficeParityInnerMarkup(viewId, context = 'full') {
+    const definition = extendedOfficeDefinitions[viewId];
+    const ui = officeParityState(viewId);
+    const description = `A mesma estrutura da página presidencial aplicada a ${definition.title.toLowerCase()}: filtros, fotos, gráfico temporal, ranking, fontes e catálogo completo.`;
+    const header = headerMarkup(definition.eyebrow, definition.title, description, `<div class="flex flex-wrap gap-2"><span class="status-chip"><i class="bg-emerald-500"></i>${escapeHtml(ui.uf)}</span><span class="status-chip"><i class="bg-blue-500"></i>Dados auditáveis</span></div>`);
+    const simulation = officeParitySeatMarkup(viewId, true);
+    const categoryLead = simulation
+      ? `<div class="grid items-stretch gap-4 xl:grid-cols-[minmax(300px,.72fr)_minmax(0,1.28fr)]" data-category-seat-layout="${viewId}"><div data-category-theme class="min-w-0">${header}</div><div data-category-simulation class="min-w-0">${simulation}</div></div>`
+      : header;
+
+    if (context === 'overview') {
+      return `${categoryLead}
+        ${officeParityKpis(viewId)}
+        ${officeParityExplorerMarkup(viewId)}
+        ${officeParityLatestAuditMarkup(viewId)}`;
+    }
+
+    return `${categoryLead}
+      ${officeParityRosterMarkup(viewId)}
+      ${officeParityExplorerMarkup(viewId)}
+      ${officeParityTableMarkup(viewId)}`;
+  };
+
+  seatInteractiveInstallStyles();
