@@ -1,0 +1,91 @@
+
+  // Ampliação estadual verificada em fontes publicadas. Cenários continuam separados.
+  Object.assign(officeAssemblySeats, { CE: 46, GO: 41, PI: 30, RN: 24 });
+
+  const auditedGovernorPolls = [
+    extendedGovernorPoll(
+      'governor-ce-quaest-2026-04-30', 'CE', 'Ceará', 'Genial/Quaest', '30/04/2026', '24 a 28/04/2026', '1.002', '±3 p.p.', 'CE-01725/2026',
+      'https://quaest.com.br/pesquisa-genial-quaest-ceara-rio-grande-do-sul-goias-2026/',
+      [
+        extendedScenario('Ciro × Elmano no 1º turno', [
+          extendedCandidate('Ciro Gomes', 'PSDB', 41), extendedCandidate('Elmano de Freitas', 'PT', 32),
+          extendedCandidate('Eduardo Girão', 'Novo', 4), extendedCandidate('Jarir Pereira', 'PSOL', 1),
+          extendedCandidate('Zé Batista', 'PSTU', 0)
+        ], 11, 11),
+        extendedScenario('Camilo × Ciro no 1º turno', [
+          extendedCandidate('Camilo Santana', 'PT', 40), extendedCandidate('Ciro Gomes', 'PSDB', 33),
+          extendedCandidate('Eduardo Girão', 'Novo', 5), extendedCandidate('Jarir Pereira', 'PSOL', 1),
+          extendedCandidate('Zé Batista', 'PSTU', 1)
+        ], 9, 11),
+        extendedScenario('Elmano × Roberto Cláudio', [
+          extendedCandidate('Elmano de Freitas', 'PT', 39), extendedCandidate('Roberto Cláudio', 'União Brasil', 16),
+          extendedCandidate('Eduardo Girão', 'Novo', 8), extendedCandidate('Jarir Pereira', 'PSOL', 2),
+          extendedCandidate('Zé Batista', 'PSTU', 1)
+        ], 13, 21),
+        extendedScenario('Camilo × Roberto Cláudio', [
+          extendedCandidate('Camilo Santana', 'PT', 49), extendedCandidate('Roberto Cláudio', 'União Brasil', 12),
+          extendedCandidate('Eduardo Girão', 'Novo', 9), extendedCandidate('Jarir Pereira', 'PSOL', 1),
+          extendedCandidate('Zé Batista', 'PSTU', 1)
+        ], 10, 18)
+      ],
+      [
+        extendedScenario('Camilo Santana × Ciro Gomes', [extendedCandidate('Camilo Santana', 'PT', 44), extendedCandidate('Ciro Gomes', 'PSDB', 39)], 7, 10),
+        extendedScenario('Ciro Gomes × Elmano de Freitas', [extendedCandidate('Ciro Gomes', 'PSDB', 46), extendedCandidate('Elmano de Freitas', 'PT', 35)], 8, 11),
+        extendedScenario('Elmano de Freitas × Roberto Cláudio', [extendedCandidate('Elmano de Freitas', 'PT', 46), extendedCandidate('Roberto Cláudio', 'União Brasil', 26)], 9, 19),
+        extendedScenario('Camilo Santana × Roberto Cláudio', [extendedCandidate('Camilo Santana', 'PT', 58), extendedCandidate('Roberto Cláudio', 'União Brasil', 20)], 6, 16)
+      ]
+    ),
+    extendedGovernorPoll(
+      'governor-go-quaest-2026-04-30', 'GO', 'Goiás', 'Genial/Quaest', '30/04/2026', '24 a 28/04/2026', '1.104', '±3 p.p.', 'GO-00211/2026',
+      'https://quaest.com.br/pesquisa-genial-quaest-ceara-rio-grande-do-sul-goias-2026/',
+      [
+        extendedScenario('Cenário com Adriana Accorsi', [
+          extendedCandidate('Daniel Vilela', 'MDB', 33), extendedCandidate('Marconi Perillo', 'PSDB', 21),
+          extendedCandidate('Adriana Accorsi', 'PT', 10), extendedCandidate('Wilder Morais', 'PL', 9)
+        ], 15, 12),
+        extendedScenario('Cenário com Edward Madureira', [
+          extendedCandidate('Daniel Vilela', 'MDB', 33), extendedCandidate('Marconi Perillo', 'PSDB', 21),
+          extendedCandidate('Wilder Morais', 'PL', 11), extendedCandidate('Edward Madureira', 'PT', 5)
+        ], 15, 15),
+        extendedScenario('Cenário com Cíntia Dias', [
+          extendedCandidate('Daniel Vilela', 'MDB', 34), extendedCandidate('Marconi Perillo', 'PSDB', 21),
+          extendedCandidate('Wilder Morais', 'PL', 10), extendedCandidate('Cíntia Dias', 'PSOL', 5)
+        ], 16, 14)
+      ],
+      [
+        extendedScenario('Daniel Vilela × Marconi Perillo', [extendedCandidate('Daniel Vilela', 'MDB', 46), extendedCandidate('Marconi Perillo', 'PSDB', 27)], 12, 15),
+        extendedScenario('Daniel Vilela × Wilder Morais', [extendedCandidate('Daniel Vilela', 'MDB', 51), extendedCandidate('Wilder Morais', 'PL', 21)], 12, 16)
+      ]
+    ),
+    extendedGovernorPoll(
+      'governor-pi-atlas-2026-07-21', 'PI', 'Piauí', 'AtlasIntel/MeioNorte', '21/07/2026', '15 a 20/07/2026', '1.188', '±3 p.p.', 'PI-05787/2026',
+      'https://www.opovo.com.br/noticias/politica/2026/07/21/amp/atlas-pi-rafael-fonteles-lidera-intencoes-de-voto-no-1-turno.html',
+      [extendedScenario('Cenário estimulado', [
+        extendedCandidate('Rafael Fonteles', 'PT', 64.2), extendedCandidate('Joel Rodrigues', 'PP', 21.7),
+        extendedCandidate('Toni Rodrigues', 'PL', 2.6), extendedCandidate('Elizeu Aguiar', 'Novo', 0.8),
+        extendedCandidate('Gisvaldo Oliveira', 'PSOL', 0.5), extendedCandidate('Gustavo Henrique', 'Avante', 0.4),
+        extendedCandidate('Lúcia Santos', 'PSDB', 0.3), extendedCandidate('Santiago Belizário', 'UP', 0.2),
+        extendedCandidate('Francisco Jurity', 'DC', 0.1), extendedCandidate('Lourdes Melo', 'PCO', 0.1),
+        extendedCandidate('Geraldo Carvalho', 'PSTU', 0)
+      ], 2.9, 6)]
+    ),
+    extendedGovernorPoll(
+      'governor-rn-atlas-2026-07-22', 'RN', 'Rio Grande do Norte', 'AtlasIntel/94FM', '22/07/2026', '16 a 21/07/2026', '1.245', '±3 p.p.', 'RN-04754/2026 · BR-07335/2026',
+      'https://www.opovo.com.br/noticias/politica/eleicoes/2026/07/22/pesquisa-atlas-rn-traz-cadu-xavier-na-lideranca-para-governo.html',
+      [extendedScenario('Cenário estimulado', [
+        extendedCandidate('Cadu Xavier', 'PT', 36.3), extendedCandidate('Álvaro Dias', 'PL', 27.7),
+        extendedCandidate('Allyson Bezerra', 'União Brasil', 25.1)
+      ])],
+      [
+        extendedScenario('Cadu Xavier × Álvaro Dias', [extendedCandidate('Cadu Xavier', 'PT', 45.7), extendedCandidate('Álvaro Dias', 'PL', 35.5)]),
+        extendedScenario('Cadu Xavier × Allyson Bezerra', [extendedCandidate('Cadu Xavier', 'PT', 39.4), extendedCandidate('Allyson Bezerra', 'União Brasil', 34.2)]),
+        extendedScenario('Allyson Bezerra × Álvaro Dias', [extendedCandidate('Allyson Bezerra', 'União Brasil', 35.7), extendedCandidate('Álvaro Dias', 'PL', 29.7)])
+      ]
+    )
+  ];
+
+  const auditedGovernorIds = new Set(extendedOfficeDefinitions.governors.polls.map((poll) => poll.id));
+  auditedGovernorPolls.forEach((poll) => {
+    if (!auditedGovernorIds.has(poll.id)) extendedOfficeDefinitions.governors.polls.push(poll);
+  });
+  extendedOfficeDefinitions.governors.polls.sort((a,b) => officeParityDate(a.publication).localeCompare(officeParityDate(b.publication)) || a.id.localeCompare(b.id));
