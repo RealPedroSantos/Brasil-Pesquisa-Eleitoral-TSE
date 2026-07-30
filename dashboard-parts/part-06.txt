@@ -1,1 +1,574 @@
+
+  const electionLiveStyleId = 'elections-2026-live-style';
+  const electionLiveState = {
+    year: 2026,
+    round: 1,
+    cargo: 'president',
+    uf: 'br',
+    municipality: '',
+    zone: '',
+    section: '',
+    status: null,
+    summary: null,
+    historical: null,
+    states: [],
+    municipalities: [],
+    municipalityResult: null,
+    sections: [],
+    map: null,
+    loading: false,
+    granularLoading: false,
+    error: '',
+    granularError: '',
+    requestToken: 0,
+    autoRefresh: null,
+    lastUpdated: null
+  };
+
+  const electionCargoOptions = [
+    ['president', 'Presidente'],
+    ['governor', 'Governador'],
+    ['senator', 'Senador'],
+    ['federalDeputy', 'Deputado Federal'],
+    ['stateDeputy', 'Deputado Estadual/Distrital']
+  ];
+
+  const electionUfNames = {
+    br: 'Brasil', ac: 'Acre', al: 'Alagoas', ap: 'Amapá', am: 'Amazonas', ba: 'Bahia', ce: 'Ceará', df: 'Distrito Federal', es: 'Espírito Santo',
+    go: 'Goiás', ma: 'Maranhão', mt: 'Mato Grosso', ms: 'Mato Grosso do Sul', mg: 'Minas Gerais', pa: 'Pará', pb: 'Paraíba', pr: 'Paraná',
+    pe: 'Pernambuco', pi: 'Piauí', rj: 'Rio de Janeiro', rn: 'Rio Grande do Norte', rs: 'Rio Grande do Sul', ro: 'Rondônia', rr: 'Roraima',
+    sc: 'Santa Catarina', sp: 'São Paulo', se: 'Sergipe', to: 'Tocantins'
+  };
+
+  const electionCandidateWiki = {
+    'LULA': 'Luiz Inácio Lula da Silva',
+    'JAIR BOLSONARO': 'Jair Bolsonaro',
+    'SIMONE TEBET': 'Simone Tebet',
+    'CIRO GOMES': 'Ciro Gomes',
+    'SORAYA THRONICKE': 'Soraya Thronicke',
+    "FELIPE D'AVILA": "Felipe d'Avila",
+    'PADRE KELMON': 'Padre Kelmon',
+    'LÉO PÉRICLES': 'Léo Péricles',
+    'SOFIA MANZANO': 'Sofia Manzano',
+    'VERA': 'Vera Lúcia Salgado',
+    'EYMAEL': 'José Maria Eymael'
+  };
+
+  const electionPalette = ['#047857', '#1d4ed8', '#dc2626', '#7e22ce', '#ea580c', '#0f766e', '#be123c', '#334155', '#ca8a04', '#0891b2', '#64748b', '#4f46e5'];
+
+  function electionInstallStyles() {
+    if (document.getElementById(electionLiveStyleId)) return;
+    const style = document.createElement('style');
+    style.id = electionLiveStyleId;
+    style.textContent = `
+      @keyframes electionBarReveal { from { transform: scaleX(0); opacity: .25; } to { transform: scaleX(1); opacity: 1; } }
+      @keyframes electionCardEnter { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+      @keyframes electionPulseLive { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .45; transform: scale(.75); } }
+      @keyframes electionMapEnter { from { opacity: 0; transform: scale(.97); } to { opacity: 1; transform: scale(1); } }
+      @keyframes electionCountPop { 0% { transform: scale(.84); } 70% { transform: scale(1.08); } 100% { transform: scale(1); } }
+      [data-election-motion] { opacity: 0; animation: electionCardEnter 520ms cubic-bezier(.2,.8,.2,1) both; animation-delay: var(--election-delay,0ms); }
+      [data-election-bar] { transform-origin: left center; animation: electionBarReveal 760ms cubic-bezier(.2,.8,.2,1) both; animation-delay: var(--election-delay,0ms); }
+      [data-election-map] { animation: electionMapEnter 600ms ease both; }
+      [data-election-live-dot] { animation: electionPulseLive 1.3s ease-in-out infinite; }
+      [data-election-value].is-election-value-updated { animation: electionCountPop 360ms cubic-bezier(.2,.8,.2,1.2) both; }
+      .election-map-state { cursor: pointer; stroke: #fff; stroke-width: 1.25; transition: opacity 160ms ease, stroke-width 160ms ease, filter 160ms ease, transform 160ms ease; transform-box: fill-box; transform-origin: center; }
+      .election-map-state:hover, .election-map-state:focus-visible { opacity: .82; stroke: #0f172a; stroke-width: 2.5; filter: drop-shadow(0 2px 3px rgba(15,23,42,.22)); outline: none; }
+      .election-map-state.is-active { stroke: #0f172a; stroke-width: 3; filter: drop-shadow(0 2px 4px rgba(15,23,42,.3)); }
+      .election-candidate-row { transition: background-color 160ms ease, transform 160ms ease, border-color 160ms ease; }
+      .election-candidate-row:hover, .election-candidate-row:focus-visible { background: #f8fafc; transform: translateX(3px); border-color: var(--candidate-color,#10b981); outline: 2px solid #a7f3d0; outline-offset: 1px; }
+      .election-drill-button { transition: background-color 160ms ease, color 160ms ease, transform 160ms ease; }
+      .election-drill-button:hover, .election-drill-button:focus-visible { background: #ecfdf5; color: #065f46; transform: translateX(2px); outline: 2px solid #a7f3d0; outline-offset: 1px; }
+      @media (prefers-reduced-motion: reduce) {
+        [data-election-motion], [data-election-bar], [data-election-map], [data-election-live-dot], [data-election-value].is-election-value-updated { animation: none !important; opacity: 1 !important; transform: none !important; }
+        .election-map-state, .election-candidate-row, .election-drill-button { transition: none !important; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function electionCargoLabel(cargo = electionLiveState.cargo) {
+    return electionCargoOptions.find(([id]) => id === cargo)?.[1] || cargo;
+  }
+
+  function electionUfLabel(uf = electionLiveState.uf) {
+    return electionUfNames[String(uf || 'br').toLowerCase()] || String(uf || '').toUpperCase();
+  }
+
+  function electionFormatInteger(value) {
+    const number = Number(value || 0);
+    return Number.isFinite(number) ? number.toLocaleString('pt-BR', { maximumFractionDigits: 0 }) : '0';
+  }
+
+  function electionFormatPercent(value, digits = 2) {
+    const number = Number(value || 0);
+    return Number.isFinite(number) ? `${number.toLocaleString('pt-BR', { minimumFractionDigits: digits, maximumFractionDigits: digits })}%` : '0%';
+  }
+
+  function electionCandidateColor(candidate, index = 0) {
+    const signature = `${candidate?.party || ''}|${candidate?.number || ''}|${candidate?.name || ''}`;
+    let hash = 0;
+    for (let i = 0; i < signature.length; i += 1) hash = ((hash << 5) - hash + signature.charCodeAt(i)) | 0;
+    return electionPalette[Math.abs(hash || index) % electionPalette.length];
+  }
+
+  function electionCandidatePerson(candidate, index = 0) {
+    const name = String(candidate?.name || candidate?.ballotName || 'Candidato').trim();
+    const wiki = electionCandidateWiki[name.toUpperCase()] || name;
+    return {
+      ...candidate,
+      name,
+      party: candidate?.party || 'Partido não informado',
+      color: electionCandidateColor(candidate, index),
+      photo: `/api/public-figure-photo?name=${encodeURIComponent(name)}&wiki=${encodeURIComponent(wiki)}`
+    };
+  }
+
+  async function electionFetchJson(url) {
+    const response = await fetch(url, { cache: 'no-store' });
+    const payload = await response.json();
+    if (!response.ok || !payload.ok) throw new Error(payload.detail || payload.error || 'Falha ao carregar dados eleitorais.');
+    return payload;
+  }
+
+  function electionQuery(params) {
+    const search = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') search.set(key, value);
+    });
+    return `/api/election-results?${search.toString()}`;
+  }
+
+  function electionCountdown() {
+    const target = new Date('2026-10-04T08:00:00-03:00').getTime();
+    const diff = target - Date.now();
+    if (diff <= 0) return 'Dia da votação';
+    const days = Math.floor(diff / 86400000);
+    const hours = Math.floor((diff % 86400000) / 3600000);
+    return `${days}d ${hours}h`;
+  }
+
+  function electionLiveStatusMarkup() {
+    const status = electionLiveState.status;
+    const live = Boolean(status?.live && electionLiveState.summary?.live);
+    const phase = status?.phase || 'loading';
+    const label = live ? 'Apuração oficial em andamento' : phase === 'source-unavailable' ? 'Fonte oficial temporariamente indisponível' : 'Aguardando abertura da apuração 2026';
+    const description = live
+      ? 'Os dados abaixo são atualizados diretamente dos arquivos oficiais de divulgação do TSE.'
+      : 'A página já está conectada à configuração oficial. Nenhum voto de 2026 será exibido antes de o TSE liberar a totalização.';
+    return `<section class="border-l-4 ${live ? 'border-emerald-500 bg-emerald-50' : 'border-amber-500 bg-amber-50'} p-4" data-election-motion style="--election-delay:0ms">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex items-start gap-3"><i ${live ? 'data-election-live-dot' : ''} class="mt-1 h-3 w-3 shrink-0 ${live ? 'bg-emerald-500' : 'bg-amber-500'}"></i><div><strong class="font-display text-xl uppercase text-slate-950">${escapeHtml(label)}</strong><p class="mt-1 text-sm leading-relaxed text-slate-700">${escapeHtml(description)}</p></div></div>
+        <div class="shrink-0 border border-slate-300 bg-white px-3 py-2 text-right"><span class="block text-[10px] font-bold uppercase tracking-widest text-slate-500">1º turno · 4 de outubro</span><b class="font-display text-xl text-slate-950">${escapeHtml(electionCountdown())}</b></div>
+      </div>
+    </section>`;
+  }
+
+  function electionControlsMarkup() {
+    const isHistorical = electionLiveState.year === 2022;
+    const ufOptions = Object.entries(electionUfNames).filter(([id]) => electionLiveState.cargo === 'president' || id !== 'br');
+    const municipalityDisabled = !isHistorical || electionLiveState.uf === 'br' || electionLiveState.granularLoading;
+    const zoneRows = electionLiveState.municipalityResult?.zones || [];
+    return `<section class="border border-slate-200 bg-white" data-election-motion style="--election-delay:70ms">
+      <div class="border-b border-slate-200 bg-slate-50 p-3"><span class="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-700">Navegação ponta a ponta</span><strong class="mt-1 block font-display text-xl uppercase text-slate-950">Ano, cargo, turno, estado, município, zona e seção</strong></div>
+      <div class="grid gap-3 p-3 sm:grid-cols-2 xl:grid-cols-4">
+        <label class="control-label"><span>Base de dados</span><select class="control-select" data-election-year><option value="2026" ${electionLiveState.year === 2026 ? 'selected' : ''}>2026 · ao vivo</option><option value="2022" ${isHistorical ? 'selected' : ''}>2022 · resultado final</option></select></label>
+        <label class="control-label"><span>Cargo</span><select class="control-select" data-election-cargo>${electionCargoOptions.map(([id, label]) => `<option value="${id}" ${electionLiveState.cargo === id ? 'selected' : ''}>${escapeHtml(label)}</option>`).join('')}</select></label>
+        <label class="control-label"><span>Turno</span><select class="control-select" data-election-round><option value="1" ${electionLiveState.round === 1 ? 'selected' : ''}>1º turno</option>${['president','governor'].includes(electionLiveState.cargo) ? `<option value="2" ${electionLiveState.round === 2 ? 'selected' : ''}>2º turno</option>` : ''}</select></label>
+        <label class="control-label"><span>Estado</span><select class="control-select" data-election-uf>${ufOptions.map(([id, label]) => `<option value="${id}" ${electionLiveState.uf === id ? 'selected' : ''}>${escapeHtml(label)}${id !== 'br' ? ` · ${id.toUpperCase()}` : ''}</option>`).join('')}</select></label>
+        <label class="control-label"><span>Município</span><select class="control-select" data-election-municipality ${municipalityDisabled ? 'disabled' : ''}><option value="">${isHistorical ? 'Todos os municípios' : 'Disponível durante a apuração'}</option>${electionLiveState.municipalities.map((item) => `<option value="${escapeHtml(item.code)}" ${electionLiveState.municipality === item.code ? 'selected' : ''}>${escapeHtml(item.name)}</option>`).join('')}</select></label>
+        <label class="control-label"><span>Zona eleitoral</span><select class="control-select" data-election-zone ${!electionLiveState.municipalityResult || !zoneRows.length ? 'disabled' : ''}><option value="">Todas as zonas</option>${zoneRows.map((item) => `<option value="${escapeHtml(item.code)}" ${electionLiveState.zone === item.code ? 'selected' : ''}>Zona ${escapeHtml(item.code)}${item.name ? ` · ${escapeHtml(item.name)}` : ''}</option>`).join('')}</select></label>
+        <label class="control-label"><span>Seção / local</span><select class="control-select" data-election-section ${!electionLiveState.sections.length ? 'disabled' : ''}><option value="">Todas as seções</option>${electionLiveState.sections.map((item) => `<option value="${escapeHtml(item.section)}" ${electionLiveState.section === item.section ? 'selected' : ''}>Seção ${escapeHtml(item.section)}${item.location ? ` · ${escapeHtml(item.location)}` : ''}</option>`).join('')}</select></label>
+        <div class="flex items-end"><button type="button" data-election-refresh class="control-button min-h-11 w-full">Atualizar dados oficiais</button></div>
+      </div>
+      ${electionLiveState.granularError ? `<div class="border-t border-red-200 bg-red-50 p-3 text-sm text-red-800">${escapeHtml(electionLiveState.granularError)}</div>` : ''}
+    </section>`;
+  }
+
+  function electionMetricMarkup(label, value, detail, accent = 'emerald', delay = 0) {
+    const accentClass = { emerald: 'border-t-emerald-500', blue: 'border-t-blue-500', red: 'border-t-red-500', amber: 'border-t-amber-500' }[accent] || 'border-t-emerald-500';
+    return `<article class="border border-slate-200 border-t-4 ${accentClass} bg-white p-4" data-election-motion style="--election-delay:${delay}ms"><span class="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">${escapeHtml(label)}</span><strong data-election-value class="mt-2 block font-display text-3xl uppercase text-slate-950">${escapeHtml(value)}</strong><small class="mt-1 block text-xs leading-relaxed text-slate-500">${escapeHtml(detail)}</small></article>`;
+  }
+
+  function electionMetricsMarkup(result) {
+    const waiting = !result || result.waiting;
+    const candidatesVotes = result?.candidates?.reduce((sum, item) => sum + Number(item.votes || 0), 0) || 0;
+    const updated = result?.updatedDate || result?.updatedTime ? [result.updatedDate, result.updatedTime].filter(Boolean).join(' · ') : 'Sem atualização de votos';
+    return `<section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      ${electionMetricMarkup('Votos em candidatos', waiting ? '—' : electionFormatInteger(candidatesVotes), waiting ? 'Aguardando totalização oficial de 2026' : `${electionCargoLabel()} · ${electionUfLabel()}`, 'emerald', 110)}
+      ${electionMetricMarkup('Seções totalizadas', waiting ? '0%' : electionFormatPercent(result.sectionsPercentage || 0, 2), waiting ? 'Nenhuma seção de 2026 totalizada' : 'Progresso informado pelo arquivo oficial', 'blue', 150)}
+      ${electionMetricMarkup('Candidatos com votos', waiting ? '0' : String(result.candidates?.length || 0), waiting ? 'Lista oficial será carregada do TSE' : 'Resultados presentes no recorte', 'red', 190)}
+      ${electionMetricMarkup('Última atualização', waiting ? 'Aguardando' : updated, result?.sourceUrl ? 'Origem: resultados.tse.jus.br' : 'Conexão oficial preparada', 'amber', 230)}
+    </section>`;
+  }
+
+  function electionCandidateRowsMarkup(result, compact = false) {
+    const candidates = (result?.candidates || []).slice(0, compact ? 6 : 12).map(electionCandidatePerson);
+    if (!candidates.length) return `<div class="border border-dashed border-slate-300 bg-slate-50 p-8 text-center"><strong class="font-display text-2xl uppercase text-slate-700">Aguardando votos oficiais</strong><p class="mt-2 text-sm text-slate-500">As fotos, votos e percentuais de 2026 aparecerão quando os arquivos oficiais forem disponibilizados.</p></div>`;
+    const maxVotes = Math.max(1, ...candidates.map((candidate) => Number(candidate.votes || 0)));
+    return `<div class="space-y-2">${candidates.map((candidate, index) => `<button type="button" class="election-candidate-row grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border border-slate-200 bg-white p-3 text-left" style="--candidate-color:${candidate.color}" data-election-candidate-index="${index}">
+      <span class="relative"><i class="absolute -left-1 -top-1 z-10 grid h-5 min-w-5 place-items-center bg-slate-950 px-1 font-display text-xs text-white">${index + 1}</i>${candidatePhotoMarkup(candidate, compact ? 'md' : 'lg')}</span>
+      <span class="min-w-0"><strong class="block truncate text-sm text-slate-950">${escapeHtml(candidate.name)}</strong><small class="mt-0.5 block truncate text-xs font-bold uppercase text-slate-500">${escapeHtml(candidate.party)}${candidate.number ? ` · ${escapeHtml(candidate.number)}` : ''}</small><span class="mt-2 block h-2.5 overflow-hidden bg-slate-100"><i data-election-bar class="block h-full" style="--election-delay:${index * 55}ms;width:${(candidate.votes / maxVotes) * 100}%;background:${candidate.color}"></i></span></span>
+      <span class="text-right"><b class="block font-display text-2xl text-slate-950">${electionFormatPercent(candidate.percentage || 0, 2)}</b><small class="block text-[10px] text-slate-500">${electionFormatInteger(candidate.votes)} votos</small></span>
+    </button>`).join('')}</div>`;
+  }
+
+  function electionResultsPanelMarkup() {
+    const liveResult = electionLiveState.summary;
+    const historical = electionLiveState.historical;
+    const primary = electionLiveState.year === 2026 ? liveResult : historical;
+    return `<section class="grid gap-4 xl:grid-cols-[1.15fr_.85fr]">
+      <article class="border border-slate-200 bg-white" data-election-motion style="--election-delay:260ms">
+        <div class="flex flex-col gap-2 border-b border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between"><div><span class="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-700">${electionLiveState.year === 2026 ? 'Apuração atual' : 'Resultado histórico'}</span><strong class="mt-1 block font-display text-2xl uppercase text-slate-950">${electionCargoLabel()} · ${electionUfLabel()}</strong></div><span class="table-badge">${electionLiveState.round}º turno · ${electionLiveState.year}</span></div>
+        <div class="p-4">${electionCandidateRowsMarkup(primary)}</div>
+      </article>
+      <article class="border border-slate-200 bg-white" data-election-motion style="--election-delay:310ms">
+        <div class="border-b border-slate-200 bg-slate-50 p-4"><span class="text-[10px] font-bold uppercase tracking-[0.18em] text-blue-700">Comparação obrigatória</span><strong class="mt-1 block font-display text-2xl uppercase text-slate-950">Última eleição · 2022</strong><p class="mt-1 text-xs text-slate-500">Mesmo cargo, turno e abrangência selecionados.</p></div>
+        <div class="p-4">${electionCandidateRowsMarkup(historical, true)}</div>
+      </article>
+    </section>`;
+  }
+
+  function electionMapCoordinates(geometry) {
+    if (!geometry) return [];
+    if (geometry.type === 'Polygon') return geometry.coordinates;
+    if (geometry.type === 'MultiPolygon') return geometry.coordinates.flat();
+    return [];
+  }
+
+  function electionMapPath(rings, bounds, width, height) {
+    const [minX, minY, maxX, maxY] = bounds;
+    const pad = 18;
+    const scale = Math.min((width - pad * 2) / Math.max(.0001, maxX - minX), (height - pad * 2) / Math.max(.0001, maxY - minY));
+    const offsetX = (width - (maxX - minX) * scale) / 2;
+    const offsetY = (height - (maxY - minY) * scale) / 2;
+    return rings.map((ring) => ring.map(([lon, lat], index) => {
+      const x = offsetX + (lon - minX) * scale;
+      const y = height - (offsetY + (lat - minY) * scale);
+      return `${index ? 'L' : 'M'}${x.toFixed(2)},${y.toFixed(2)}`;
+    }).join(' ') + ' Z').join(' ');
+  }
+
+  function electionMapMarkup() {
+    return `<article class="border border-slate-200 bg-white" data-election-motion style="--election-delay:350ms"><div class="news-card-heading"><div><span>Leitura territorial</span><strong>Resultado por estado</strong></div><small>Clique em uma UF</small></div><div class="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_280px]"><div class="min-h-[420px]" data-election-map-host><div class="grid min-h-[420px] place-items-center text-sm text-slate-500">Carregando malha oficial e resultados estaduais…</div></div><aside data-election-map-ranking class="space-y-2"><p class="text-sm text-slate-500">Os estados serão coloridos pela candidatura mais votada no recorte selecionado.</p></aside></div></article>`;
+  }
+
+  function electionScopeResult() {
+    const zones = electionLiveState.municipalityResult?.zones || [];
+    if (electionLiveState.zone) return zones.find((item) => item.code === electionLiveState.zone) || null;
+    return electionLiveState.municipalityResult?.municipality || null;
+  }
+
+  function electionDrilldownMarkup() {
+    const scope = electionScopeResult();
+    const sections = electionLiveState.sections;
+    const selectedSection = sections.find((item) => item.section === electionLiveState.section);
+    const breadcrumbs = [
+      ['Brasil', 'br'],
+      ...(electionLiveState.uf !== 'br' ? [[electionUfLabel(), electionLiveState.uf.toUpperCase()]] : []),
+      ...(electionLiveState.municipality ? [[electionLiveState.municipalities.find((item) => item.code === electionLiveState.municipality)?.name || `Município ${electionLiveState.municipality}`, electionLiveState.municipality]] : []),
+      ...(electionLiveState.zone ? [[`Zona ${electionLiveState.zone}`, electionLiveState.zone]] : []),
+      ...(selectedSection ? [[`Seção ${selectedSection.section}`, selectedSection.section]] : [])
+    ];
+
+    return `<section class="border border-slate-200 bg-white" data-election-motion style="--election-delay:390ms">
+      <div class="news-card-heading"><div><span>Ponta a ponta</span><strong>Estado → município → zona → seção/local</strong></div><small>${electionLiveState.year === 2022 ? 'Dados históricos oficiais' : 'Estrutura preparada para 2026'}</small></div>
+      <div class="flex flex-wrap gap-1 border-b border-slate-200 bg-slate-50 p-3">${breadcrumbs.map(([label], index) => `<span class="inline-flex items-center gap-1 text-xs font-bold text-slate-600">${index ? '<i class="text-slate-300">›</i>' : ''}${escapeHtml(label)}</span>`).join('')}</div>
+      <div class="grid gap-4 p-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <div>
+          ${scope ? `<div class="mb-4 border-l-4 border-emerald-500 bg-emerald-50 p-3"><span class="text-[10px] font-bold uppercase tracking-widest text-emerald-800">Resultado do recorte</span><strong class="mt-1 block font-display text-xl uppercase text-slate-950">${escapeHtml(scope.name || (electionLiveState.zone ? `Zona ${electionLiveState.zone}` : 'Município selecionado'))}</strong></div>${electionCandidateRowsMarkup({ candidates: scope.candidates || [] }, true)}` : `<div class="grid min-h-[260px] place-items-center border border-dashed border-slate-300 bg-slate-50 p-6 text-center"><div><strong class="font-display text-xl uppercase text-slate-700">Selecione estado e município</strong><p class="mt-2 max-w-lg text-sm text-slate-500">Em 2022, o painel consulta os arquivos consolidados por município e zona. Para 2026, a navegação granular será ativada conforme os arquivos EA16, EA18 e EA20 forem liberados.</p></div></div>`}
+        </div>
+        <aside class="border border-slate-200 bg-slate-50">
+          <div class="border-b border-slate-200 p-3"><span class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Seções e locais</span><strong class="mt-1 block font-display text-lg uppercase text-slate-950">${sections.length ? `${sections.length} seção(ões) localizada(s)` : 'Aguardando recorte'}</strong></div>
+          <div class="max-h-[440px] divide-y divide-slate-200 overflow-y-auto">${sections.slice(0, 250).map((item) => `<button type="button" class="election-drill-button grid w-full grid-cols-[70px_minmax(0,1fr)] gap-2 bg-white p-3 text-left" data-election-section-button="${escapeHtml(item.section)}"><b class="font-display text-lg text-slate-950">${escapeHtml(item.section)}</b><span class="min-w-0"><strong class="block truncate text-xs text-slate-800">${escapeHtml(item.location || 'Local não informado no arquivo')}</strong><small class="mt-1 block truncate text-[10px] uppercase text-slate-500">${item.neighborhood ? `Bairro: ${escapeHtml(item.neighborhood)}` : 'Bairro não informado pela fonte desta seção'}</small></span></button>`).join('') || '<div class="p-5 text-sm leading-relaxed text-slate-500">Selecione um município e uma zona para listar seções. A divisão por bairro só aparece quando o local/endereço oficial permite essa associação.</div>'}</div>
+        </aside>
+      </div>
+    </section>`;
+  }
+
+  function electionTechnicalMarkup() {
+    return `<section class="grid gap-4 lg:grid-cols-3">
+      ${[
+        ['2022 · resultado final', 'Arquivos oficiais do TSE por Brasil/UF, configuração de municípios e consolidados por município/zona.'],
+        ['2026 · atualização ao vivo', 'Conexão com a configuração ele-c.json e arquivos oficiais de resultado. Atualização periódica somente quando a apuração existir.'],
+        ['Bairro, zona e seção', 'Zona e seção são identificadores eleitorais oficiais. Bairro é exibido apenas quando pode ser associado ao local de votação, sem inferência artificial.']
+      ].map(([title, description], index) => `<article class="border border-slate-200 bg-white p-4" data-election-motion style="--election-delay:${430 + index * 45}ms"><span class="text-[10px] font-bold uppercase tracking-widest text-emerald-700">Camada ${index + 1}</span><strong class="mt-2 block font-display text-xl uppercase text-slate-950">${escapeHtml(title)}</strong><p class="mt-2 text-sm leading-relaxed text-slate-600">${escapeHtml(description)}</p></article>`).join('')}
+    </section>`;
+  }
+
+  function renderElections2026Shell() {
+    const host = $('elections2026');
+    if (!host) return;
+    host.innerHTML = `${headerMarkup('Apuração e resultados', 'Eleições 2026', 'Central de votos com comparação histórica, atualização oficial, fotos, gráficos animados e navegação territorial do Brasil até zona e seção eleitoral.', `<div class="flex flex-wrap gap-2"><span class="status-chip"><i class="bg-emerald-500"></i>Fonte oficial TSE</span><span class="status-chip"><i class="bg-blue-500"></i>2022 × 2026</span><span class="status-chip"><i class="bg-amber-500"></i>Sem votos simulados</span></div>`)}
+      ${electionLiveStatusMarkup()}
+      ${electionControlsMarkup()}
+      ${electionMetricsMarkup(electionLiveState.year === 2026 ? electionLiveState.summary : electionLiveState.historical)}
+      ${electionLiveState.error ? `<div class="border-l-4 border-red-500 bg-red-50 p-4 text-sm text-red-800">${escapeHtml(electionLiveState.error)}</div>` : ''}
+      ${electionResultsPanelMarkup()}
+      ${electionMapMarkup()}
+      ${electionDrilldownMarkup()}
+      ${electionTechnicalMarkup()}`;
+    bindPhotoFallbacks(host);
+    electionBindControls(host);
+    electionRenderMap();
+    if (typeof dataMotionEnhance === 'function') dataMotionEnhance(host);
+  }
+
+  function electionAnimateUpdatedValues(root = document) {
+    qsa('[data-election-value]', root).forEach((node) => {
+      node.classList.remove('is-election-value-updated');
+      void node.offsetWidth;
+      node.classList.add('is-election-value-updated');
+    });
+  }
+
+  async function electionLoadCore({ preserveGranular = false } = {}) {
+    const token = ++electionLiveState.requestToken;
+    electionLiveState.loading = true;
+    electionLiveState.error = '';
+    if (!preserveGranular) {
+      electionLiveState.municipality = '';
+      electionLiveState.zone = '';
+      electionLiveState.section = '';
+      electionLiveState.municipalities = [];
+      electionLiveState.municipalityResult = null;
+      electionLiveState.sections = [];
+    }
+    renderElections2026Shell();
+
+    const shared = { cargo: electionLiveState.cargo, round: electionLiveState.round, uf: electionLiveState.uf };
+    try {
+      const requests = [
+        electionFetchJson(electionQuery({ action: 'status' })),
+        electionFetchJson(electionQuery({ action: 'summary', year: 2022, ...shared })),
+        electionFetchJson(electionQuery({ action: 'states', year: electionLiveState.year, cargo: electionLiveState.cargo, round: electionLiveState.round }))
+      ];
+      if (electionLiveState.year === 2026) requests.push(electionFetchJson(electionQuery({ action: 'summary', year: 2026, ...shared })));
+      const values = await Promise.all(requests);
+      if (token !== electionLiveState.requestToken) return;
+      electionLiveState.status = values[0];
+      electionLiveState.historical = values[1];
+      electionLiveState.states = values[2].states || [];
+      electionLiveState.summary = electionLiveState.year === 2026 ? values[3] : values[1];
+      electionLiveState.lastUpdated = new Date();
+    } catch (error) {
+      if (token !== electionLiveState.requestToken) return;
+      electionLiveState.error = error.message;
+      if (!electionLiveState.historical) electionLiveState.historical = { ok: true, candidates: [], waiting: true };
+    } finally {
+      if (token !== electionLiveState.requestToken) return;
+      electionLiveState.loading = false;
+      renderElections2026Shell();
+      electionAnimateUpdatedValues($('elections2026'));
+      if (electionLiveState.year === 2022 && electionLiveState.uf !== 'br') electionLoadMunicipalities();
+      electionConfigureAutoRefresh();
+    }
+  }
+
+  async function electionLoadMunicipalities() {
+    if (electionLiveState.year !== 2022 || electionLiveState.uf === 'br') return;
+    electionLiveState.granularLoading = true;
+    electionLiveState.granularError = '';
+    renderElections2026Shell();
+    try {
+      const payload = await electionFetchJson(electionQuery({ action: 'municipalities', year: 2022, cargo: electionLiveState.cargo, round: electionLiveState.round, uf: electionLiveState.uf }));
+      electionLiveState.municipalities = payload.municipalities || [];
+    } catch (error) {
+      electionLiveState.granularError = error.message;
+      electionLiveState.municipalities = [];
+    } finally {
+      electionLiveState.granularLoading = false;
+      renderElections2026Shell();
+    }
+  }
+
+  async function electionLoadMunicipality() {
+    if (electionLiveState.year !== 2022 || !electionLiveState.municipality) return;
+    electionLiveState.granularLoading = true;
+    electionLiveState.granularError = '';
+    electionLiveState.zone = '';
+    electionLiveState.section = '';
+    electionLiveState.sections = [];
+    renderElections2026Shell();
+    try {
+      const payload = await electionFetchJson(electionQuery({ action: 'municipality', year: 2022, cargo: electionLiveState.cargo, round: electionLiveState.round, uf: electionLiveState.uf, municipality: electionLiveState.municipality }));
+      electionLiveState.municipalityResult = payload;
+    } catch (error) {
+      electionLiveState.granularError = error.message;
+      electionLiveState.municipalityResult = null;
+    } finally {
+      electionLiveState.granularLoading = false;
+      renderElections2026Shell();
+    }
+  }
+
+  async function electionLoadSections() {
+    if (electionLiveState.year !== 2022 || !electionLiveState.municipality) return;
+    electionLiveState.granularLoading = true;
+    electionLiveState.granularError = '';
+    electionLiveState.section = '';
+    renderElections2026Shell();
+    try {
+      const payload = await electionFetchJson(electionQuery({ action: 'sections', year: 2022, cargo: electionLiveState.cargo, round: electionLiveState.round, uf: electionLiveState.uf, municipality: electionLiveState.municipality, zone: electionLiveState.zone }));
+      electionLiveState.sections = payload.sections || [];
+    } catch (error) {
+      electionLiveState.granularError = error.message;
+      electionLiveState.sections = [];
+    } finally {
+      electionLiveState.granularLoading = false;
+      renderElections2026Shell();
+    }
+  }
+
+  function electionOpenCandidate(index) {
+    const result = electionLiveState.year === 2026 ? electionLiveState.summary : electionLiveState.historical;
+    const candidate = result?.candidates?.[Number(index)];
+    const dialog = $('pollDialog');
+    const body = $('dialogBody');
+    if (!candidate || !dialog || !body) return;
+    const person = electionCandidatePerson(candidate, Number(index));
+    body.innerHTML = `<article class="space-y-5"><header class="flex items-center gap-4 border-l-4 pl-4" style="border-color:${person.color}">${candidatePhotoMarkup(person, 'xl')}<div class="min-w-0"><span class="text-xs font-bold uppercase tracking-widest text-slate-500">${electionLiveState.year} · ${electionLiveState.round}º turno · ${escapeHtml(electionUfLabel())}</span><h2 class="mt-1 font-display text-4xl uppercase text-slate-950">${escapeHtml(person.name)}</h2><p class="mt-1 text-sm text-slate-500">${escapeHtml(person.party)}${person.number ? ` · número ${escapeHtml(person.number)}` : ''}</p></div></header><div class="grid gap-3 sm:grid-cols-3">${[['Votos', electionFormatInteger(person.votes)], ['Percentual', electionFormatPercent(person.percentage, 2)], ['Abrangência', electionUfLabel()]].map(([label, value]) => `<div class="border border-slate-200 bg-slate-50 p-3"><span class="text-[10px] font-bold uppercase tracking-widest text-slate-500">${escapeHtml(label)}</span><strong class="mt-1 block font-display text-2xl text-slate-950">${escapeHtml(value)}</strong></div>`).join('')}</div><div class="border-l-4 border-blue-500 bg-blue-50 p-4 text-sm leading-relaxed text-blue-950">O valor pertence exclusivamente ao cargo, turno e território selecionados. Alterar o estado, município ou zona muda o universo de votos.</div>${result.sourceUrl ? `<a class="inline-flex min-h-11 items-center bg-emerald-600 px-5 py-3 text-sm font-black uppercase text-white" href="${escapeHtml(result.sourceUrl)}" target="_blank" rel="noopener noreferrer">Abrir arquivo oficial</a>` : ''}</article>`;
+    bindPhotoFallbacks(body);
+    dialog.showModal();
+  }
+
+  function electionBindControls(host) {
+    host.querySelector('[data-election-year]')?.addEventListener('change', (event) => {
+      electionLiveState.year = Number(event.target.value);
+      electionLoadCore();
+    });
+    host.querySelector('[data-election-cargo]')?.addEventListener('change', (event) => {
+      electionLiveState.cargo = event.target.value;
+      if (!['president','governor'].includes(electionLiveState.cargo)) electionLiveState.round = 1;
+      if (electionLiveState.cargo !== 'president' && electionLiveState.uf === 'br') electionLiveState.uf = 'sp';
+      electionLoadCore();
+    });
+    host.querySelector('[data-election-round]')?.addEventListener('change', (event) => {
+      electionLiveState.round = Number(event.target.value);
+      electionLoadCore();
+    });
+    host.querySelector('[data-election-uf]')?.addEventListener('change', (event) => {
+      electionLiveState.uf = event.target.value;
+      electionLoadCore();
+    });
+    host.querySelector('[data-election-municipality]')?.addEventListener('change', (event) => {
+      electionLiveState.municipality = event.target.value;
+      electionLiveState.municipalityResult = null;
+      electionLiveState.zone = '';
+      electionLiveState.sections = [];
+      if (electionLiveState.municipality) electionLoadMunicipality();
+      else renderElections2026Shell();
+    });
+    host.querySelector('[data-election-zone]')?.addEventListener('change', (event) => {
+      electionLiveState.zone = event.target.value;
+      electionLiveState.sections = [];
+      electionLoadSections();
+    });
+    host.querySelector('[data-election-section]')?.addEventListener('change', (event) => {
+      electionLiveState.section = event.target.value;
+      renderElections2026Shell();
+    });
+    host.querySelector('[data-election-refresh]')?.addEventListener('click', () => electionLoadCore({ preserveGranular: true }));
+    qsa('[data-election-candidate-index]', host).forEach((button) => button.addEventListener('click', () => electionOpenCandidate(button.dataset.electionCandidateIndex)));
+    qsa('[data-election-section-button]', host).forEach((button) => button.addEventListener('click', () => {
+      electionLiveState.section = button.dataset.electionSectionButton;
+      renderElections2026Shell();
+    }));
+  }
+
+  async function electionEnsureMap() {
+    if (electionLiveState.map) return electionLiveState.map;
+    try {
+      const response = await fetch('/api/brazil-map', { cache: 'force-cache' });
+      if (!response.ok) throw new Error('Mapa indisponível');
+      electionLiveState.map = await response.json();
+    } catch (error) {
+      electionLiveState.map = { type: 'FeatureCollection', features: [] };
+    }
+    return electionLiveState.map;
+  }
+
+  async function electionRenderMap() {
+    const host = $('elections2026')?.querySelector('[data-election-map-host]');
+    const ranking = $('elections2026')?.querySelector('[data-election-map-ranking]');
+    if (!host || !ranking) return;
+    const geojson = await electionEnsureMap();
+    if (!host.isConnected) return;
+    const features = geojson?.features || [];
+    const stateMap = new Map(electionLiveState.states.filter((item) => item.available).map((item) => [item.uf.toUpperCase(), item]));
+    const allCoordinates = features.flatMap((feature) => electionMapCoordinates(feature.geometry).flat());
+    if (!features.length || !allCoordinates.length) {
+      host.innerHTML = '<div class="grid min-h-[420px] place-items-center border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-500">A malha cartográfica não pôde ser carregada. Use a lista estadual ao lado.</div>';
+    } else {
+      const xs = allCoordinates.map((point) => point[0]);
+      const ys = allCoordinates.map((point) => point[1]);
+      const bounds = [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)];
+      const width = 640;
+      const height = 520;
+      host.innerHTML = `<svg data-election-map class="h-auto w-full" viewBox="0 0 ${width} ${height}" role="img" aria-label="Mapa do Brasil com resultados eleitorais por estado">${features.map((feature) => {
+        const uf = String(feature.properties?.sigla || feature.properties?.SIGLA || feature.properties?.uf || '').toUpperCase();
+        const result = stateMap.get(uf);
+        const winner = result?.winner ? electionCandidatePerson(result.winner) : null;
+        const fill = winner?.color || '#cbd5e1';
+        const label = result?.winner ? `${uf}: ${result.winner.name}, ${electionFormatPercent(result.winner.percentage || 0, 2)}` : `${uf}: resultado indisponível`;
+        return `<path class="election-map-state ${electionLiveState.uf.toUpperCase() === uf ? 'is-active' : ''}" data-election-map-uf="${uf.toLowerCase()}" tabindex="0" role="button" aria-label="${escapeHtml(label)}" d="${electionMapPath(electionMapCoordinates(feature.geometry), bounds, width, height)}" fill="${fill}"><title>${escapeHtml(label)}</title></path>`;
+      }).join('')}</svg>`;
+      qsa('[data-election-map-uf]', host).forEach((path) => {
+        const activate = () => {
+          electionLiveState.uf = path.dataset.electionMapUf;
+          electionLoadCore();
+        };
+        path.addEventListener('click', activate);
+        path.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            activate();
+          }
+        });
+      });
+    }
+
+    const rankedStates = electionLiveState.states.filter((item) => item.available && item.winner)
+      .sort((a, b) => Number(b.winner.votes || 0) - Number(a.winner.votes || 0));
+    ranking.innerHTML = `<div><span class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Estados com dados</span><strong class="mt-1 block font-display text-xl uppercase text-slate-950">${rankedStates.length} de 27 UFs</strong></div><div class="mt-3 max-h-[380px] space-y-1.5 overflow-y-auto">${rankedStates.map((item) => {
+      const person = electionCandidatePerson(item.winner);
+      return `<button type="button" data-election-state-button="${item.uf.toLowerCase()}" class="election-drill-button grid w-full grid-cols-[38px_minmax(0,1fr)_auto] items-center gap-2 border border-slate-200 bg-white p-2 text-left"><b class="font-display text-lg text-slate-950">${item.uf}</b><span class="min-w-0"><strong class="block truncate text-xs text-slate-800">${escapeHtml(person.name)}</strong><small class="block truncate text-[10px] uppercase text-slate-500">${escapeHtml(person.party)}</small></span><b class="font-display text-base text-slate-950">${electionFormatPercent(person.percentage || 0, 1)}</b></button>`;
+    }).join('') || '<div class="border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-500">Nenhuma UF com votos disponíveis para este recorte.</div>'}</div>`;
+    qsa('[data-election-state-button]', ranking).forEach((button) => button.addEventListener('click', () => {
+      electionLiveState.uf = button.dataset.electionStateButton;
+      electionLoadCore();
+    }));
+  }
+
+  function electionConfigureAutoRefresh() {
+    if (electionLiveState.autoRefresh) clearInterval(electionLiveState.autoRefresh);
+    electionLiveState.autoRefresh = null;
+    if (electionLiveState.year !== 2026 || !electionLiveState.status?.live) return;
+    electionLiveState.autoRefresh = setInterval(() => {
+      if (document.visibilityState === 'visible' && state.view === 'elections2026') electionLoadCore({ preserveGranular: true });
+    }, 20000);
+  }
+
+  function renderElections2026() {
+    electionInstallStyles();
+    renderElections2026Shell();
+    if (!electionLiveState.status && !electionLiveState.loading) electionLoadCore();
+  }
+
+  const electionPreviousShowView = showView;
+  showView = function showViewWithElections2026(id) {
+    if (id !== 'elections2026') return electionPreviousShowView(id);
+    state.view = id;
+    qsa('.view-section').forEach((section) => section.classList.toggle('hidden', section.id !== id));
+    qsa('[data-view]').forEach((button) => button.classList.toggle('is-active', button.dataset.view === id));
+    $('sidebar').classList.remove('translate-x-0');
+    $('sidebar').classList.add('-translate-x-full', 'lg:translate-x-0');
+    renderElections2026();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    history.replaceState(null, '', '#elections2026');
+  };
+
+  window.addEventListener('resize', () => {
+    if (state.view === 'elections2026') electionRenderMap();
+  });
+
 })();
