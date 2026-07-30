@@ -1,9 +1,9 @@
 {
   "name": "brasil-pesquisa-eleitoral-tse",
-  "version": "4.2.1",
+  "version": "4.2.2",
   "private": true,
   "scripts": {
-    "build": "rm -rf public && mkdir -p public && cat dashboard-parts/*.txt > public/dashboard.js && node --check public/dashboard.js && node --check polls-data.js && node --check polls-data-extra.js && node --check elections-2026-complete.js && node --check api/election-results.js && node --check api/election-results-v2.js && node --check api/election-section-detail.js && npx @tailwindcss/cli -i ./src/input.css -o ./public/tailwind.css --minify && cp index.html polls-data.js polls-data-extra.js elections-2026-complete.js public/ && node scripts/smoke-test.js && node scripts/elections-2026-test.js && node scripts/trust-audit-test.js"
+    "build": "rm -rf public && mkdir -p public && cat dashboard-parts/*.txt > public/dashboard.js && node --check public/dashboard.js && node --check polls-data.js && node --check polls-data-extra.js && node --check elections-2026-complete.js && node --check api/election-results.js && node --check api/election-results-v2.js && node --check api/election-section-detail.js && node --check api/tse-registry-v2.js && npx @tailwindcss/cli -i ./src/input.css -o ./public/tailwind.css --minify && cp index.html polls-data.js polls-data-extra.js elections-2026-complete.js public/ && node scripts/smoke-test.js && node scripts/elections-2026-test.js && node scripts/trust-audit-test.js && node scripts/double-validation-test.js"
   },
   "dependencies": {
     "adm-zip": "^0.5.16",
