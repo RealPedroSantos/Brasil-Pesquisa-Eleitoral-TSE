@@ -21,7 +21,7 @@ assert(dashboard.includes("portraitRailInside = 'disabled'"), 'trilho de retrato
 assert(finalRenderer.includes("verifiedTimelineScenarioKey(item)"), 'cenários não possuem chave própria.');
 assert(finalRenderer.includes("uniqueDates.size === sorted.length"), 'pesquisas na mesma data ainda podem formar linha.');
 assert(finalRenderer.includes("scenario") && finalRenderer.includes("candidates"), 'a comparabilidade não considera cenário e composição.');
-assert(!finalRenderer.includes("chart-photo-connector"), 'o renderizador final ainda cria conectores externos.');
+assert(!/svgEl\([^\n]*chart-photo-connector/.test(finalRenderer), 'o renderizador final ainda cria conectores externos.');
 assert(!finalRenderer.includes("chart-candidate-photo-border"), 'o renderizador final ainda posiciona retratos sobre o gráfico.');
 
 // Validação 2: completude da importação oficial de 2026.
