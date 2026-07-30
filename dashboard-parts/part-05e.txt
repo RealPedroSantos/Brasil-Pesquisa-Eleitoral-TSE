@@ -1,0 +1,361 @@
+
+  const dataMotionStyleId = 'system-data-motion';
+  const registryDocumentStore = new Map();
+  let dataMotionSequence = 0;
+
+  function dataMotionInstallStyles() {
+    if (document.getElementById(dataMotionStyleId)) return;
+    const style = document.createElement('style');
+    style.id = dataMotionStyleId;
+    style.textContent = `
+      @keyframes systemDataReveal {
+        from { opacity: 0; transform: translateY(12px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      @keyframes systemDataEmphasis {
+        0% { transform: scale(.86); opacity: .35; }
+        72% { transform: scale(1.08); opacity: 1; }
+        100% { transform: scale(1); opacity: 1; }
+      }
+      @keyframes systemDocumentEnter {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      [data-data-motion] {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+      [data-data-motion].is-data-visible {
+        animation: systemDataReveal 520ms cubic-bezier(.2,.8,.2,1) both;
+        animation-delay: var(--data-delay, 0ms);
+      }
+      [data-count-target] {
+        display: inline-block;
+        transform-origin: center;
+      }
+      [data-count-target].is-count-complete {
+        animation: systemDataEmphasis 360ms cubic-bezier(.2,.8,.2,1.18) both;
+      }
+      [data-seat-simulation] [data-seat-motion] {
+        will-change: transform, opacity;
+      }
+      [data-seat-simulation] > div,
+      [data-seat-simulation] > details {
+        will-change: transform, opacity;
+      }
+      tr[data-registry-document] {
+        cursor: pointer;
+        transition: background-color 160ms ease, box-shadow 160ms ease;
+      }
+      tr[data-registry-document]:hover,
+      tr[data-registry-document]:focus-visible {
+        background: #ecfdf5;
+        box-shadow: inset 4px 0 0 #10b981;
+        outline: none;
+      }
+      .registry-document-button {
+        display: inline-flex;
+        min-height: 36px;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #059669;
+        background: #ffffff;
+        padding: 7px 10px;
+        color: #065f46;
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+        transition: background-color 160ms ease, color 160ms ease;
+      }
+      .registry-document-button:hover,
+      .registry-document-button:focus-visible {
+        background: #059669;
+        color: #ffffff;
+        outline: 2px solid #6ee7b7;
+        outline-offset: 2px;
+      }
+      .registry-document-field {
+        animation: systemDocumentEnter 420ms ease both;
+        animation-delay: var(--document-delay, 0ms);
+      }
+      @media (prefers-reduced-motion: reduce) {
+        [data-data-motion],
+        [data-data-motion].is-data-visible,
+        [data-count-target],
+        [data-count-target].is-count-complete,
+        .registry-document-field {
+          animation: none !important;
+          opacity: 1 !important;
+          transform: none !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function dataMotionParseNumber(text) {
+    const raw = String(text || '').trim();
+    const match = raw.match(/^(\d{1,3}(?:\.\d{3})*|\d+)(?:,(\d+))?\s*(%|cadeiras?|vagas?|registros?|cenários?|pesquisas?|perfis?)?$/i);
+    if (!match) return null;
+    const integer = match[1].replace(/\./g, '');
+    const decimals = match[2] || '';
+    const value = Number(`${integer}${decimals ? `.${decimals}` : ''}`);
+    if (!Number.isFinite(value)) return null;
+    return {
+      value,
+      digits: decimals.length,
+      suffix: match[3] ? ` ${match[3]}` : raw.endsWith('%') ? '%' : ''
+    };
+  }
+
+  function dataMotionPrepareCount(element) {
+    if (!element || element.dataset.countPrepared === 'true') return;
+    const parsed = dataMotionParseNumber(element.textContent);
+    if (!parsed) return;
+    element.dataset.countPrepared = 'true';
+    element.dataset.countTarget = String(parsed.value);
+    element.dataset.countDigits = String(parsed.digits);
+    element.dataset.countSuffix = parsed.suffix;
+    element.dataset.countOriginal = element.textContent.trim();
+  }
+
+  function dataMotionCountUp(element) {
+    if (!element || element.dataset.countAnimated === 'true') return;
+    const target = Number(element.dataset.countTarget);
+    if (!Number.isFinite(target)) return;
+    element.dataset.countAnimated = 'true';
+    const digits = Number(element.dataset.countDigits || 0);
+    const suffix = element.dataset.countSuffix || '';
+    const duration = Math.min(1100, Math.max(420, target * 4));
+    const startedAt = performance.now();
+    const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+    const renderValue = (value) => {
+      const formatted = Number(value).toLocaleString('pt-BR', {
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits
+      });
+      element.textContent = `${formatted}${suffix}`;
+    };
+
+    if (reduced) {
+      renderValue(target);
+      element.classList.add('is-count-complete');
+      return;
+    }
+
+    renderValue(0);
+    const frame = (now) => {
+      const progress = Math.min(1, (now - startedAt) / duration);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      renderValue(target * eased);
+      if (progress < 1) requestAnimationFrame(frame);
+      else {
+        element.textContent = element.dataset.countOriginal;
+        element.classList.add('is-count-complete');
+      }
+    };
+    requestAnimationFrame(frame);
+  }
+
+  function dataMotionReveal(element) {
+    if (!element || element.classList.contains('is-data-visible')) return;
+    element.classList.add('is-data-visible');
+    if (element.matches('[data-count-target]')) dataMotionCountUp(element);
+    qsa('[data-count-target]', element).forEach(dataMotionCountUp);
+  }
+
+  const dataMotionObserver = 'IntersectionObserver' in window
+    ? new IntersectionObserver((entries, observer) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          dataMotionReveal(entry.target);
+          observer.unobserve(entry.target);
+        });
+      }, { threshold: 0.08, rootMargin: '0px 0px -4% 0px' })
+    : null;
+
+  function dataMotionMark(element, delay = 0) {
+    if (!element || element.dataset.dataMotion) return;
+    element.dataset.dataMotion = 'reveal';
+    element.style.setProperty('--data-delay', `${Math.min(650, delay)}ms`);
+    if (dataMotionObserver) dataMotionObserver.observe(element);
+    else dataMotionReveal(element);
+  }
+
+  function dataMotionEnhanceSimulation(simulation) {
+    if (!simulation || simulation.dataset.simulationAnimated === 'true') return;
+    simulation.dataset.simulationAnimated = 'true';
+
+    [...simulation.children].forEach((child, index) => dataMotionMark(child, index * 90));
+    qsa('svg, details, [class*="grid-cols"], [class*="inline-flex"]', simulation)
+      .forEach((element, index) => dataMotionMark(element, 130 + index * 28));
+
+    qsa('b, strong', simulation).forEach(dataMotionPrepareCount);
+    qsa('[data-count-target]', simulation).forEach((element, index) => {
+      dataMotionMark(element, 180 + index * 34);
+      if (!dataMotionObserver) dataMotionCountUp(element);
+    });
+  }
+
+  function dataMotionEnhance(root = document) {
+    const scope = root.nodeType === 1 ? root : document;
+    const simulations = [];
+    if (scope.matches?.('[data-seat-simulation]')) simulations.push(scope);
+    simulations.push(...qsa('[data-seat-simulation]', scope));
+    simulations.forEach(dataMotionEnhanceSimulation);
+
+    const selectors = [
+      '.chart-ranking-row',
+      '.candidate-roster-card',
+      '.poll-result-chip',
+      '.data-table tbody tr',
+      '[data-office-chart-candidate]',
+      '.status-chip',
+      '.poll-dialog-candidate',
+      '.registry-document-field'
+    ];
+
+    selectors.forEach((selector) => {
+      const elements = [];
+      if (scope.matches?.(selector)) elements.push(scope);
+      elements.push(...qsa(selector, scope));
+      elements.forEach((element, index) => dataMotionMark(element, (index % 14) * 34));
+    });
+
+    qsa('.chart-ranking-row > b, .poll-result-chip b, .poll-dialog-candidate > b, [data-office-chart-candidate] > b, [class*="text-4xl"][class*="font-display"]', scope)
+      .forEach((element, index) => {
+        dataMotionPrepareCount(element);
+        if (element.dataset.countTarget) dataMotionMark(element, 100 + (index % 12) * 30);
+      });
+  }
+
+  function registryDocumentKey(row) {
+    const source = [row.registry, row.office, row.uf, row.location, row.institute, row.company, row.fieldStart, row.fieldEnd, row.publication, row.sample]
+      .map((value) => String(value || '').trim().toUpperCase()).join('|');
+    let hash = 2166136261;
+    for (let index = 0; index < source.length; index += 1) {
+      hash ^= source.charCodeAt(index);
+      hash = Math.imul(hash, 16777619);
+    }
+    return `tse-${(hash >>> 0).toString(36)}`;
+  }
+
+  function registryDocumentField(label, value, index) {
+    if (value === undefined || value === null || String(value).trim() === '') return '';
+    return `<div class="registry-document-field border border-slate-200 bg-slate-50 p-3" style="--document-delay:${Math.min(520, index * 38)}ms">
+      <span class="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">${escapeHtml(label)}</span>
+      <strong class="mt-1 block break-words text-sm text-slate-950">${escapeHtml(value)}</strong>
+    </div>`;
+  }
+
+  function registryDocumentRows(row) {
+    return [
+      ['Número do registro', row.registry || 'Não informado'],
+      ['Cargo pesquisado', row.office || 'Não identificado'],
+      ['Unidade da Federação', row.uf || 'Brasil'],
+      ['Localidade / abrangência', row.location || row.scope || (row.uf === 'BR' ? 'Brasil' : 'Não informada')],
+      ['Instituto / empresa responsável', row.institute || 'Não informado'],
+      ['CNPJ da empresa', row.company || 'Não informado'],
+      ['Contratante', row.contractor || 'Não informado no arquivo carregado'],
+      ['CPF/CNPJ do contratante', row.contractorDocument || 'Não informado no arquivo carregado'],
+      ['Início do campo', row.fieldStart || 'Não informado'],
+      ['Fim do campo', row.fieldEnd || 'Não informado'],
+      ['Data prevista de divulgação', row.publication || 'Não informada'],
+      ['Quantidade de entrevistados', row.sample || 'Não informada'],
+      ['Margem de erro', row.margin || 'Não informada'],
+      ['Situação do registro', row.status || 'Registrada'],
+      ['Abrangência declarada', row.scope || 'Não informada'],
+      ['Valor contratado', row.amount || 'Não informado no arquivo carregado'],
+      ['Estatístico responsável', row.statistician || 'Não informado no arquivo carregado'],
+      ['Registro profissional', row.statisticianRegistry || 'Não informado no arquivo carregado'],
+      ['Arquivo de origem', row.sourceFile || 'Base consolidada PesqEle 2026']
+    ];
+  }
+
+  function openRegistryDocument(key) {
+    const row = registryDocumentStore.get(key);
+    const dialog = $('pollDialog');
+    const body = $('dialogBody');
+    if (!row || !dialog || !body) return;
+
+    const fields = registryDocumentRows(row);
+    const officialSource = state.registryMeta?.source || 'https://cdn.tse.jus.br/estatistica/sead/odsele/pesquisa_eleitoral/pesquisa_eleitoral_2026.zip';
+    body.innerHTML = `<article data-registry-document-view="${escapeHtml(key)}" class="space-y-5">
+      <header class="border-l-4 border-emerald-500 pl-4">
+        <span class="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">Documento cadastral oficial</span>
+        <h2 class="mt-2 font-display text-3xl font-black uppercase text-slate-950 sm:text-4xl">Registro oficial da pesquisa</h2>
+        <p class="mt-2 text-sm leading-relaxed text-slate-600">Ficha reconstruída diretamente da linha correspondente no conjunto PesqEle 2026 do Tribunal Superior Eleitoral.</p>
+      </header>
+      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">${fields.map(([label, value], index) => registryDocumentField(label, value, index)).join('')}</div>
+      ${row.methodology ? `<section class="registry-document-field border border-slate-200 bg-white p-4" style="--document-delay:420ms"><span class="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">Metodologia declarada</span><p class="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-slate-700">${escapeHtml(row.methodology)}</p></section>` : ''}
+      <div class="border-l-4 border-blue-500 bg-blue-50 p-4 text-sm leading-relaxed text-blue-950">
+        <strong class="block uppercase tracking-wide">Origem e integridade</strong>
+        <p class="mt-1">Este painel não altera o conteúdo cadastral. Quando um campo não existe na linha oficial carregada, ele é indicado como não informado, sem preenchimento por inferência.</p>
+      </div>
+      <a class="inline-flex min-h-11 items-center justify-center bg-emerald-600 px-5 py-3 text-sm font-black uppercase tracking-wide text-white hover:bg-emerald-700" href="${escapeHtml(officialSource)}" target="_blank" rel="noopener noreferrer">Abrir base oficial do TSE</a>
+    </article>`;
+
+    if (dialog.open) dialog.close();
+    dialog.showModal();
+    dataMotionEnhance(body);
+  }
+
+  const registryDocumentPreviousTableMarkup = registryTableMarkup;
+  registryTableMarkup = function interactiveRegistryTableMarkup(records) {
+    if (state.registryLoading || state.registryError || !records.length) return registryDocumentPreviousTableMarkup(records);
+
+    return `<div class="overflow-x-auto"><table class="data-table"><thead><tr><th>Registro</th><th>Cargo</th><th>UF/local</th><th>Instituto</th><th>Campo</th><th>Amostra</th><th>Situação</th><th>Documento</th></tr></thead><tbody>${records.map((row) => {
+      const key = registryDocumentKey(row);
+      registryDocumentStore.set(key, row);
+      const label = `Abrir documento do registro ${row.registry || 'sem número'}`;
+      return `<tr data-registry-document="${escapeHtml(key)}" role="button" tabindex="0" aria-label="${escapeHtml(label)}">
+        <td><strong class="text-emerald-800 underline decoration-emerald-300 underline-offset-4">${escapeHtml(row.registry || '—')}</strong></td>
+        <td>${escapeHtml(row.office || '—')}</td>
+        <td>${escapeHtml([row.uf, row.location].filter(Boolean).join(' · ') || 'Brasil')}</td>
+        <td>${escapeHtml(row.institute || '—')}</td>
+        <td>${escapeHtml(row.fieldStart || '—')}${row.fieldEnd ? ` a ${escapeHtml(row.fieldEnd)}` : ''}</td>
+        <td>${escapeHtml(row.sample || '—')}</td>
+        <td><span class="table-badge">${escapeHtml(row.status || 'Registrada')}</span></td>
+        <td><button type="button" class="registry-document-button" data-registry-document="${escapeHtml(key)}" aria-label="${escapeHtml(label)}">Ver registro</button></td>
+      </tr>`;
+    }).join('')}</tbody></table></div>`;
+  };
+
+  function registryDocumentBindEvents() {
+    document.addEventListener('click', (event) => {
+      const target = event.target.closest?.('[data-registry-document]');
+      if (!target) return;
+      const key = target.dataset.registryDocument;
+      if (!registryDocumentStore.has(key)) return;
+      event.preventDefault();
+      openRegistryDocument(key);
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      const target = event.target.closest?.('tr[data-registry-document]');
+      if (!target || event.target.closest('button')) return;
+      event.preventDefault();
+      openRegistryDocument(target.dataset.registryDocument);
+    });
+  }
+
+  function dataMotionInit() {
+    dataMotionInstallStyles();
+    registryDocumentBindEvents();
+    dataMotionEnhance(document);
+
+    const mutationObserver = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+          if (node.nodeType === 1) dataMotionEnhance(node);
+        });
+      });
+    });
+    mutationObserver.observe(document.body, { childList: true, subtree: true });
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', dataMotionInit, { once: true });
+  else dataMotionInit();
