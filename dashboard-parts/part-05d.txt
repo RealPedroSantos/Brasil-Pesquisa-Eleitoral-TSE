@@ -1,0 +1,263 @@
+
+  const chartMotionStyleId = 'chart-motion-system';
+
+  function chartMotionInstallStyles() {
+    if (document.getElementById(chartMotionStyleId)) return;
+    const style = document.createElement('style');
+    style.id = chartMotionStyleId;
+    style.textContent = `
+      @keyframes chartLineReveal {
+        from { stroke-dashoffset: 1; opacity: .2; }
+        to { stroke-dashoffset: 0; opacity: 1; }
+      }
+      @keyframes chartPointEnter {
+        0% { opacity: 0; transform: scale(.15); }
+        70% { opacity: 1; transform: scale(1.18); }
+        100% { opacity: 1; transform: scale(1); }
+      }
+      @keyframes chartPortraitEnter {
+        from { opacity: 0; transform: translateX(14px) scale(.82); }
+        to { opacity: 1; transform: translateX(0) scale(1); }
+      }
+      @keyframes chartConnectorEnter {
+        from { opacity: 0; stroke-dashoffset: 24; }
+        to { opacity: .72; stroke-dashoffset: 0; }
+      }
+      @keyframes chartBarGrow {
+        from { transform: scaleX(0); opacity: .35; }
+        to { transform: scaleX(1); opacity: 1; }
+      }
+      @keyframes chartSeatEnter {
+        0% { opacity: 0; transform: scale(.1); }
+        75% { opacity: 1; transform: scale(1.25); }
+        100% { opacity: 1; transform: scale(1); }
+      }
+      [data-chart-motion="line"] {
+        stroke-dasharray: 1;
+        stroke-dashoffset: 1;
+        animation: chartLineReveal 900ms cubic-bezier(.2,.75,.2,1) both;
+        animation-delay: var(--chart-delay, 0ms);
+      }
+      [data-chart-motion="point"] {
+        opacity: 0;
+        transform-box: fill-box;
+        transform-origin: center;
+        animation: chartPointEnter 460ms cubic-bezier(.18,.85,.25,1.25) both;
+        animation-delay: var(--chart-delay, 0ms);
+      }
+      [data-chart-motion="portrait"] {
+        opacity: 0;
+        transform-box: fill-box;
+        transform-origin: center;
+        animation: chartPortraitEnter 520ms cubic-bezier(.2,.8,.2,1) both;
+        animation-delay: var(--chart-delay, 0ms);
+      }
+      .chart-photo-connector {
+        fill: none;
+        stroke-dasharray: 5 5;
+        stroke-dashoffset: 24;
+        opacity: 0;
+        pointer-events: none;
+        animation: chartConnectorEnter 580ms ease-out both;
+        animation-delay: var(--chart-delay, 0ms);
+      }
+      .chart-photo-rail {
+        stroke: #cbd5e1;
+        stroke-width: 1;
+        stroke-dasharray: 2 6;
+        opacity: .6;
+        pointer-events: none;
+      }
+      [data-seat-motion] {
+        opacity: 0;
+        transform-box: fill-box;
+        transform-origin: center;
+        animation: chartSeatEnter 360ms cubic-bezier(.2,.8,.2,1.2) both;
+        animation-delay: var(--seat-delay, 0ms);
+      }
+      [data-office-chart-candidate] i,
+      [data-seat-simulation] i[style*="width:"] {
+        transform-origin: left center;
+        animation: chartBarGrow 720ms cubic-bezier(.2,.8,.2,1) both;
+      }
+      .candidate-photo-grid {
+        gap: .7rem !important;
+      }
+      .candidate-photo-card {
+        min-height: 3.55rem;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        [data-chart-motion],
+        .chart-photo-connector,
+        [data-seat-motion],
+        [data-office-chart-candidate] i,
+        [data-seat-simulation] i[style*="width:"] {
+          animation: none !important;
+          opacity: 1 !important;
+          stroke-dashoffset: 0 !important;
+          transform: none !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function chartMotionViewBox(svg) {
+    const values = String(svg.getAttribute('viewBox') || '0 0 960 500').trim().split(/\s+/).map(Number);
+    return values.length === 4 && values.every(Number.isFinite) ? values : [0, 0, 960, 500];
+  }
+
+  function chartMotionSpreadY(entries, minY, maxY, gap) {
+    if (!entries.length) return [];
+    const sorted = entries.slice().sort((a, b) => a.originalY - b.originalY);
+    const available = Math.max(0, maxY - minY);
+    const effectiveGap = sorted.length > 1 ? Math.min(gap, available / (sorted.length - 1)) : 0;
+    const positions = sorted.map((entry) => Math.max(minY, Math.min(maxY, entry.originalY)));
+
+    for (let index = 1; index < positions.length; index += 1) {
+      positions[index] = Math.max(positions[index], positions[index - 1] + effectiveGap);
+    }
+
+    if (positions.at(-1) > maxY) {
+      positions[positions.length - 1] = maxY;
+      for (let index = positions.length - 2; index >= 0; index -= 1) {
+        positions[index] = Math.min(positions[index], positions[index + 1] - effectiveGap);
+      }
+    }
+
+    return sorted.map((entry, index) => ({ ...entry, labelY: positions[index] }));
+  }
+
+  function chartMotionArrangePortraits(svg) {
+    const borders = qsa('.chart-candidate-photo-border', svg);
+    if (!borders.length) return;
+
+    qsa('.chart-photo-connector, .chart-photo-rail', svg).forEach((node) => node.remove());
+
+    const fallbacks = qsa('.chart-candidate-photo-fallback', svg);
+    const initials = qsa('.chart-candidate-initials', svg);
+    const images = qsa('.chart-candidate-photo', svg);
+    const [viewX, viewY, originalWidth, height] = chartMotionViewBox(svg);
+    const largest = Math.max(...borders.map((border) => Number(border.getAttribute('width')) || 34));
+    const minCenterY = Math.max(viewY + largest / 2 + 12, 54);
+    const maxCenterY = Math.max(minCenterY, height - 112 - largest / 2);
+    const preferredGap = largest + 10;
+    const maxRows = Math.max(1, Math.floor((maxCenterY - minCenterY) / preferredGap) + 1);
+    const columns = Math.max(1, Math.min(3, Math.ceil(borders.length / maxRows)));
+    const rowsPerColumn = Math.ceil(borders.length / columns);
+    const columnGap = largest + 18;
+    const railStartX = originalWidth + 28;
+    const extraWidth = 48 + columns * columnGap;
+
+    svg.setAttribute('viewBox', `${viewX} ${viewY} ${originalWidth + extraWidth} ${height}`);
+    svg.dataset.portraitRailColumns = String(columns);
+
+    const entries = borders.map((border, index) => {
+      const width = Number(border.getAttribute('width')) || 34;
+      const heightValue = Number(border.getAttribute('height')) || width;
+      const originalX = Number(border.getAttribute('x')) + width / 2;
+      const originalY = Number(border.getAttribute('y')) + heightValue / 2;
+      return {
+        border,
+        fallback: fallbacks[index],
+        initials: initials[index],
+        image: images[index],
+        width,
+        height: heightValue,
+        originalX,
+        originalY,
+        stroke: border.getAttribute('stroke') || '#64748b'
+      };
+    }).sort((a, b) => a.originalY - b.originalY);
+
+    for (let column = 0; column < columns; column += 1) {
+      const slice = entries.slice(column * rowsPerColumn, (column + 1) * rowsPerColumn);
+      const railX = railStartX + column * columnGap;
+      const rail = svgEl('line', {
+        x1: railX,
+        y1: minCenterY - largest / 2,
+        x2: railX,
+        y2: maxCenterY + largest / 2,
+        class: 'chart-photo-rail'
+      });
+      const anchor = svg.querySelector('defs')?.nextSibling;
+      svg.insertBefore(rail, anchor || svg.firstChild?.nextSibling || null);
+
+      chartMotionSpreadY(slice, minCenterY, maxCenterY, preferredGap).forEach((entry, rowIndex) => {
+        const halfW = entry.width / 2;
+        const halfH = entry.height / 2;
+        const delay = 620 + column * 90 + rowIndex * 55;
+        const connector = svgEl('path', {
+          d: `M ${entry.originalX} ${entry.originalY} C ${entry.originalX + 24} ${entry.originalY}, ${railX - 24} ${entry.labelY}, ${railX - halfW - 3} ${entry.labelY}`,
+          stroke: entry.stroke,
+          'stroke-width': 1.6,
+          class: 'chart-photo-connector',
+          style: `--chart-delay:${delay}ms`
+        });
+        svg.insertBefore(connector, entry.fallback || entry.border);
+
+        const x = railX - halfW;
+        const y = entry.labelY - halfH;
+        [entry.fallback, entry.image, entry.border].filter(Boolean).forEach((node) => {
+          node.setAttribute('x', x);
+          node.setAttribute('y', y);
+          node.setAttribute('data-chart-motion', 'portrait');
+          node.style.setProperty('--chart-delay', `${delay}ms`);
+        });
+        if (entry.image) entry.image.removeAttribute('clip-path');
+        if (entry.initials) {
+          entry.initials.setAttribute('x', railX);
+          entry.initials.setAttribute('y', entry.labelY + 4);
+          entry.initials.setAttribute('data-chart-motion', 'portrait');
+          entry.initials.style.setProperty('--chart-delay', `${delay}ms`);
+        }
+        entry.border.dataset.originalPointX = String(entry.originalX);
+        entry.border.dataset.originalPointY = String(entry.originalY);
+        entry.border.dataset.railColumn = String(column);
+        entry.border.dataset.railRow = String(rowIndex);
+      });
+    }
+  }
+
+  function chartMotionApply(svg) {
+    if (!svg) return;
+    qsa('.chart-series-line', svg).forEach((path, index) => {
+      path.setAttribute('pathLength', '1');
+      path.setAttribute('data-chart-motion', 'line');
+      path.style.setProperty('--chart-delay', `${index * 80}ms`);
+    });
+    qsa('.chart-point', svg).forEach((point, index) => {
+      point.setAttribute('data-chart-motion', 'point');
+      point.style.setProperty('--chart-delay', `${Math.min(760, 120 + index * 22)}ms`);
+    });
+    qsa('.chart-event-line, .chart-grid-line, .chart-date-label, .chart-institute-label, .chart-scenario-label', svg).forEach((node, index) => {
+      node.setAttribute('data-chart-motion', 'portrait');
+      node.style.setProperty('--chart-delay', `${Math.min(420, index * 8)}ms`);
+    });
+    chartMotionArrangePortraits(svg);
+    svg.dataset.chartAnimated = 'true';
+  }
+
+  chartMotionInstallStyles();
+
+  const chartMotionOriginalDrawPollChart = drawPollChart;
+  drawPollChart = function drawAnimatedPollChart(svg, tooltip, legend, ranking) {
+    chartMotionOriginalDrawPollChart(svg, tooltip, legend, ranking);
+    chartMotionApply(svg);
+  };
+
+  const chartMotionOriginalOfficeParityDrawChart = officeParityDrawChart;
+  officeParityDrawChart = function drawAnimatedOfficeParityChart(root, viewId) {
+    chartMotionOriginalOfficeParityDrawChart(root, viewId);
+    chartMotionApply(root.querySelector('[data-office-parity-chart]'));
+  };
+
+  const chartMotionOriginalHemicycleSvg = extendedHemicycleSvg;
+  extendedHemicycleSvg = function animatedHemicycleSvg(model) {
+    let seatIndex = 0;
+    return chartMotionOriginalHemicycleSvg(model).replace(/<circle\b/g, () => {
+      const delay = Math.min(920, seatIndex * 5);
+      seatIndex += 1;
+      return `<circle data-seat-motion style="--seat-delay:${delay}ms"`;
+    });
+  };
