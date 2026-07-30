@@ -87,7 +87,9 @@ function normalizeRecord(raw, fallbackUf) {
   const stateName = first(raw, ['NM_UF','NM_ESTADO']);
   const location = municipality || electionUnit || stateName || (uf === 'BR' ? 'Brasil' : '');
   const institute = first(raw, ['NM_EMPRESA','NM_INSTITUTO','NM_RAZAO_SOCIAL','EMPRESA','INSTITUTO','NM_EMPRESA_CONTRATADA']) || patternValue(raw, /NM_.*EMPRESA|NM_.*INSTITUTO|RAZAO_SOCIAL/);
-  const company = first(raw, ['NR_CNPJ_EMPRESA','CNPJ_EMPRESA','NR_CNPJ_INSTITUTO']) || patternValue(raw, /CNPJ/);
+  const company = first(raw, ['NR_CNPJ_EMPRESA','CNPJ_EMPRESA','NR_CNPJ_INSTITUTO']) || patternValue(raw, /CNPJ.*EMPRESA|EMPRESA.*CNPJ|CNPJ.*INSTITUTO/);
+  const contractor = first(raw, ['NM_CONTRATANTE','NM_PESSOA_CONTRATANTE','NM_RAZAO_SOCIAL_CONTRATANTE','NM_CONTRATANTE_PESQUISA']) || patternValue(raw, /NM_.*CONTRATANTE|CONTRATANTE.*RAZAO|CONTRATANTE.*NOME/);
+  const contractorDocument = first(raw, ['NR_CPF_CNPJ_CONTRATANTE','NR_CNPJ_CONTRATANTE','NR_CPF_CONTRATANTE','CPF_CNPJ_CONTRATANTE']) || patternValue(raw, /CPF.*CONTRATANTE|CNPJ.*CONTRATANTE|CONTRATANTE.*DOCUMENTO/);
   const fieldStart = normalizeDate(first(raw, ['DT_INICIO_PESQUISA','DT_INICIO','DATA_INICIO','DT_INICIO_CAMPO']) || patternValue(raw, /DT_.*INICIO|DATA_.*INICIO/));
   const fieldEnd = normalizeDate(first(raw, ['DT_FIM_PESQUISA','DT_FIM','DATA_FIM','DT_FIM_CAMPO']) || patternValue(raw, /DT_.*FIM|DATA_.*FIM/));
   const publication = normalizeDate(first(raw, ['DT_DIVULGACAO','DT_PUBLICACAO','DATA_DIVULGACAO']) || patternValue(raw, /DIVULGACAO|PUBLICACAO/));
@@ -95,7 +97,31 @@ function normalizeRecord(raw, fallbackUf) {
   const margin = first(raw, ['VR_MARGEM_ERRO','MARGEM_ERRO','DS_MARGEM_ERRO']);
   const status = first(raw, ['DS_SITUACAO_PESQUISA','DS_SITUACAO','SITUACAO']) || patternValue(raw, /SITUACAO/);
   const scope = first(raw, ['DS_ABRANGENCIA','TP_ABRANGENCIA','ABRANGENCIA']);
-  return { registry, office: normalizeOffice(officeRaw), uf, location, institute, company, fieldStart, fieldEnd, publication, sample, margin, status: status || 'Registrada', scope };
+  const amount = first(raw, ['VR_PESQUISA','VR_CONTRATO','VALOR_PESQUISA','VALOR_CONTRATO']) || patternValue(raw, /VR_.*PESQUISA|VALOR.*PESQUISA|VR_.*CONTRATO/);
+  const statistician = first(raw, ['NM_ESTATISTICO','NM_ESTATISTICO_RESPONSAVEL','NM_RESPONSAVEL_ESTATISTICO']) || patternValue(raw, /NM_.*ESTATIST|ESTATIST.*RESPONSAVEL/);
+  const statisticianRegistry = first(raw, ['NR_REGISTRO_ESTATISTICO','NR_CONRE','REGISTRO_ESTATISTICO']) || patternValue(raw, /REGISTRO.*ESTATIST|NR_.*CONRE/);
+  const methodology = first(raw, ['DS_METODOLOGIA','METODOLOGIA','DS_PLANO_AMOSTRAL','DS_METODO_PESQUISA']) || patternValue(raw, /METODOLOGIA|PLANO.*AMOSTRAL|METODO.*PESQUISA/);
+  return {
+    registry,
+    office: normalizeOffice(officeRaw),
+    uf,
+    location,
+    institute,
+    company,
+    contractor,
+    contractorDocument,
+    fieldStart,
+    fieldEnd,
+    publication,
+    sample,
+    margin,
+    status: status || 'Registrada',
+    scope,
+    amount,
+    statistician,
+    statisticianRegistry,
+    methodology
+  };
 }
 
 function recordKey(record) {
@@ -125,7 +151,7 @@ async function loadRegistry() {
     const fallbackUf = ufMatch ? ufMatch[1].toUpperCase() : '';
     for (const values of rows) {
       const rawRecord = Object.fromEntries(headers.map((header, index) => [header, values[index] || '']));
-      const record = normalizeRecord(rawRecord, fallbackUf);
+      const record = { ...normalizeRecord(rawRecord, fallbackUf), sourceFile: entry.entryName };
       const key = recordKey(record);
       if (!key.replace(/\|/g, '') || seen.has(key)) continue;
       seen.add(key);
