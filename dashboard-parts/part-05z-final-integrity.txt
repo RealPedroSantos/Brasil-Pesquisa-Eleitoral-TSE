@@ -1,0 +1,187 @@
+
+  // Renderizador final auditado: o eixo X representa tempo real e cenários distintos nunca são conectados.
+  function verifiedTimelineDateMs(item) {
+    const iso = String(item?.date || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (iso) return new Date(`${iso[1]}-${iso[2]}-${iso[3]}T12:00:00-03:00`).getTime();
+    const br = String(item?.publication || '').match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+    if (br) return new Date(`${br[3]}-${br[2]}-${br[1]}T12:00:00-03:00`).getTime();
+    return Number.NaN;
+  }
+
+  function verifiedTimelineScenarioKey(item) {
+    const scenario = String(item?.scenario || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+    const candidates = Object.keys(item?.values || {}).sort().join('|');
+    return `${item?.round || ''}|${item?.matchup || ''}|${scenario}|${candidates}`;
+  }
+
+  function verifiedTimelineRender({ svg, tooltip, legend, ranking, items, candidateIds, candidateFor, round, openItem, tooltipFor, rankingOpenAttribute }) {
+    if (!svg) return;
+    const validItems = items.filter((item) => Number.isFinite(verifiedTimelineDateMs(item)));
+    const dates = unique(validItems.map(verifiedTimelineDateMs)).sort((a, b) => a - b);
+    const dateMin = dates[0] || Date.now();
+    const dateMax = dates.at(-1) || dateMin;
+    const width = Math.max(960, Math.max(1, dates.length) * 170 + 140);
+    const height = candidateIds.length > 10 ? 560 : 500;
+    const pad = { left: 62, right: 42, top: 42, bottom: 82 };
+    const plotW = width - pad.left - pad.right;
+    const plotH = height - pad.top - pad.bottom;
+    const rawMax = Math.max(0, ...validItems.flatMap((item) => Object.values(item.values || {}).map(Number).filter(Number.isFinite)));
+    const maxY = Math.max(20, Math.ceil((rawMax + 5) / 10) * 10);
+    const x = (item) => {
+      const ms = verifiedTimelineDateMs(item);
+      return dateMax === dateMin ? pad.left + plotW / 2 : pad.left + ((ms - dateMin) / (dateMax - dateMin)) * plotW;
+    };
+    const y = (value) => pad.top + plotH - (Number(value) / maxY) * plotH;
+
+    svg.replaceChildren();
+    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    svg.dataset.timelineValidation = 'verified-v2';
+    svg.dataset.timelineScale = 'proportional-date';
+    svg.dataset.portraitRailInside = 'disabled';
+
+    const defs = svgEl('defs');
+    const clipId = `${svg.id || 'chart'}-verified-plot`;
+    const clip = svgEl('clipPath', { id: clipId });
+    clip.appendChild(svgEl('rect', { x: pad.left, y: pad.top, width: plotW, height: plotH }));
+    defs.appendChild(clip);
+    svg.appendChild(defs);
+
+    for (let value = 0; value <= maxY; value += 10) {
+      const yy = y(value);
+      svg.appendChild(svgEl('line', { x1: pad.left, y1: yy, x2: width - pad.right, y2: yy, class: 'chart-grid-line' }));
+      svg.appendChild(svgEl('text', { x: pad.left - 9, y: yy + 4, class: 'chart-axis-label', 'text-anchor': 'end' }, `${value}%`));
+    }
+
+    dates.forEach((ms) => {
+      const item = validItems.find((entry) => verifiedTimelineDateMs(entry) === ms);
+      if (!item) return;
+      const xx = x(item);
+      svg.appendChild(svgEl('line', { x1: xx, y1: pad.top, x2: xx, y2: pad.top + plotH, class: 'chart-event-line' }));
+      const label = item.publication || new Date(ms).toLocaleDateString('pt-BR');
+      svg.appendChild(svgEl('text', { x: xx, y: height - 35, class: 'chart-date-label', 'text-anchor': 'middle' }, label));
+    });
+
+    const plot = svgEl('g', { 'clip-path': `url(#${clipId})` });
+    svg.appendChild(plot);
+
+    candidateIds.forEach((candidateId, candidateIndex) => {
+      const candidate = candidateFor(candidateId);
+      if (!candidate) return;
+      const candidateItems = validItems.filter((item) => Object.hasOwn(item.values || {}, candidateId));
+      const groups = new Map();
+      candidateItems.forEach((item) => {
+        const key = verifiedTimelineScenarioKey(item);
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(item);
+      });
+
+      groups.forEach((groupItems) => {
+        const sorted = groupItems.slice().sort((a, b) => verifiedTimelineDateMs(a) - verifiedTimelineDateMs(b) || String(a.id).localeCompare(String(b.id)));
+        const uniqueDates = new Set(sorted.map(verifiedTimelineDateMs));
+        if (sorted.length > 1 && uniqueDates.size === sorted.length) {
+          plot.appendChild(svgEl('path', {
+            d: sorted.map((item, index) => `${index ? 'L' : 'M'} ${x(item)} ${y(item.values[candidateId])}`).join(' '),
+            fill: 'none', stroke: candidate.color, 'stroke-width': round === 2 || round === 'second' ? 5 : 3.5,
+            'stroke-linecap': 'round', 'stroke-linejoin': 'round', class: 'chart-series-line',
+            'data-series-scenario': verifiedTimelineScenarioKey(sorted[0]), 'data-chart-motion': 'line', pathLength: '1',
+            style: `--chart-delay:${candidateIndex * 70}ms`
+          }));
+        }
+      });
+
+      candidateItems.forEach((item, pointIndex) => {
+        const value = Number(item.values[candidateId]);
+        const xx = x(item);
+        const yy = y(value);
+        const dot = svgEl('circle', { cx: xx, cy: yy, r: round === 2 || round === 'second' ? 6.5 : 5.5, fill: candidate.color, stroke: '#020617', 'stroke-width': 3, class: 'chart-point', 'data-chart-motion': 'point', style: `--chart-delay:${Math.min(760, 100 + pointIndex * 24)}ms` });
+        const hit = svgEl('circle', { cx: xx, cy: yy, r: 14, fill: 'transparent', class: 'chart-hit-area', tabindex: '0', role: 'button', 'aria-label': `${candidate.name}, ${formatNumber(value)}%, ${item.institute}, ${item.publication}` });
+        const show = (event) => tooltipFor(event, candidate, item, value);
+        hit.addEventListener('pointerenter', show);
+        hit.addEventListener('pointermove', show);
+        hit.addEventListener('pointerleave', () => tooltip?.classList.add('hidden'));
+        hit.addEventListener('focus', show);
+        hit.addEventListener('blur', () => tooltip?.classList.add('hidden'));
+        hit.addEventListener('click', () => openItem(item.id));
+        hit.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') openItem(item.id); });
+        plot.appendChild(dot);
+        plot.appendChild(hit);
+      });
+    });
+
+    if (!validItems.length) {
+      svg.appendChild(svgEl('text', { x: width / 2, y: height / 2, class: 'chart-empty-label', 'text-anchor': 'middle' }, 'Nenhuma pesquisa nominal verificável para este filtro.'));
+    }
+
+    const rankingRows = candidateIds.map((id) => {
+      const candidate = candidateFor(id);
+      const item = validItems.slice().reverse().find((entry) => Object.hasOwn(entry.values || {}, id));
+      return candidate && item ? { candidate, item, value: item.values[id] } : null;
+    }).filter(Boolean).sort((a, b) => b.value - a.value || a.candidate.name.localeCompare(b.candidate.name, 'pt-BR'));
+
+    if (ranking) {
+      ranking.innerHTML = `<div class="chart-ranking-heading"><span>Último dado disponível</span><strong>Ranking com fotos</strong></div><div class="chart-ranking-list">${rankingRows.map((row, index) => `<button type="button" ${rankingOpenAttribute}="${escapeHtml(row.item.id)}" class="chart-ranking-row" style="--candidate-color:${row.candidate.color}"><span class="chart-ranking-position">${index + 1}</span>${candidatePhotoMarkup(row.candidate, 'sm')}<span class="min-w-0"><strong>${escapeHtml(row.candidate.name)}</strong><small>${escapeHtml(row.candidate.party)} · ${escapeHtml(row.item.publication)}</small></span><b>${formatNumber(row.value)}%</b></button>`).join('') || '<div class="p-5 text-sm text-slate-500">Sem ranking publicado para este filtro.</div>'}</div>`;
+      ranking.querySelectorAll(`[${rankingOpenAttribute}]`).forEach((button) => button.addEventListener('click', () => openItem(button.getAttribute(rankingOpenAttribute))));
+      bindPhotoFallbacks(ranking);
+    }
+
+    if (legend) {
+      legend.innerHTML = candidateIds.map((id) => { const candidate = candidateFor(id); return candidate ? `<span class="candidate-legend-item" style="--candidate-color:${candidate.color}">${candidatePhotoMarkup(candidate, 'xs')}<span>${escapeHtml(candidate.name)} · ${escapeHtml(candidate.party)}</span></span>` : ''; }).join('');
+      bindPhotoFallbacks(legend);
+    }
+  }
+
+  officeParityCurrentObservations = function officeParityAllSafeObservations(viewId) {
+    const ui = officeParityState(viewId);
+    return officeParityObservations(viewId)
+      .filter((observation) => observation.uf === ui.uf)
+      .filter((observation) => observation.round === ui.round)
+      .filter((observation) => ui.institute === 'all' || observation.institute === ui.institute)
+      .filter((observation) => ui.scenario === 'all' || observation.scenario === ui.scenario)
+      .slice().sort((a, b) => verifiedTimelineDateMs(a) - verifiedTimelineDateMs(b) || String(a.id).localeCompare(String(b.id)));
+  };
+
+  drawPollChart = function drawPollChartVerified(svg, tooltip, legend, ranking) {
+    const polls = currentPolls();
+    const candidateIds = visibleCandidateIds(polls);
+    verifiedTimelineRender({
+      svg, tooltip, legend, ranking, items: polls, candidateIds, candidateFor: candidateById, round: state.round,
+      openItem: openPollDialog,
+      tooltipFor: (event, candidate, poll, value) => showChartTooltip(event, tooltip, candidate, poll, value),
+      rankingOpenAttribute: 'data-poll-id'
+    });
+  };
+
+  officeParityDrawChart = function officeParityDrawChartVerified(root, viewId) {
+    const svg = root.querySelector('[data-office-parity-chart]');
+    const tooltip = root.querySelector('[data-office-parity-tooltip]');
+    const legend = root.querySelector('[data-office-parity-legend]');
+    const ranking = root.querySelector('[data-office-parity-ranking]');
+    const ui = officeParityState(viewId);
+    const observations = officeParityCurrentObservations(viewId);
+    const roster = officeParityRoster(viewId, ui.uf);
+    const candidateMap = new Map(roster.map((candidate) => [candidate.id, candidate]));
+    const candidateIds = unique(observations.flatMap((observation) => Object.keys(observation.values || {}))).filter((id) => ui.selectedCandidates.has(id));
+    verifiedTimelineRender({
+      svg, tooltip, legend, ranking, items: observations, candidateIds, candidateFor: (id) => candidateMap.get(id), round: ui.round,
+      openItem: (id) => officeParityOpenDialog(viewId, id),
+      tooltipFor: (event, candidate, observation, value) => {
+        if (!tooltip) return;
+        tooltip.innerHTML = `<div class="flex items-center gap-3">${candidatePhotoMarkup(candidate, 'md')}<span><strong class="block font-display text-lg uppercase text-white">${escapeHtml(candidate.name)} · ${formatNumber(value)}%</strong><small class="block text-xs text-slate-400">${escapeHtml(candidate.party)}</small></span></div><span class="mt-3 block text-xs text-slate-300">${escapeHtml(observation.institute)} · ${escapeHtml(observation.publication)}</span><span class="mt-1 block text-xs text-slate-500">${escapeHtml(observation.scenario)} · ${escapeHtml(observation.sample)} · ${escapeHtml(observation.margin)}</span>`;
+        bindPhotoFallbacks(tooltip);
+        tooltip.classList.remove('hidden');
+        const parent = tooltip.parentElement.getBoundingClientRect();
+        const px = event.clientX ? event.clientX - parent.left : parent.width / 2;
+        const py = event.clientY ? event.clientY - parent.top : 80;
+        tooltip.style.left = `${Math.max(8, Math.min(parent.width - 270, px + 12))}px`;
+        tooltip.style.top = `${Math.max(8, py - 94)}px`;
+      },
+      rankingOpenAttribute: 'data-office-parity-observation'
+    });
+    const note = root.querySelector('[data-office-parity-explorer] .border-t.border-slate-800 p');
+    if (note) note.textContent = 'O eixo horizontal usa o intervalo real entre as datas. Linhas só conectam o mesmo candidato quando turno, confronto, cenário e composição de candidatos são idênticos; pesquisas na mesma data permanecem pontos independentes.';
+  };
+
+  chartMotionArrangePortraits = function chartMotionArrangePortraitsDisabled(svg) {
+    qsa('.chart-photo-connector, .chart-photo-rail', svg).forEach((node) => node.remove());
+    svg.dataset.portraitRailInside = 'disabled';
+  };
