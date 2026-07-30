@@ -1,0 +1,69 @@
+
+  function trustExtractRegistryNumbers(value) {
+    return String(value || '').toUpperCase().match(/(?:BR|[A-Z]{2})-\d{5}\/2026/g) || [];
+  }
+
+  function trustPublicationTimestamp(value) {
+    const match = String(value || '').match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+    if (!match) return 0;
+    return new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1]), 23, 59, 59, 999).getTime();
+  }
+
+  trustCoverageMarkup = function trustCoverageMarkupAllOffices() {
+    const presidential = window.POLL_RESULTS?.polls || [];
+    const officeViews = ['governors', 'senate', 'chamber', 'assemblies', 'district'];
+    const officePolls = officeViews.flatMap((viewId) => {
+      const definition = extendedOfficeDefinitions[viewId];
+      return (definition?.polls || []).map((poll) => ({
+        ...poll,
+        office: definition.office,
+        scope: poll.uf || 'BR',
+        date: officeParityDate(poll.publication)
+      }));
+    });
+    const catalogPolls = [
+      ...presidential.map((poll) => ({ ...poll, office: 'Presidente' })),
+      ...officePolls
+    ];
+    const uniquePolls = new Set(catalogPolls.map((poll) => [poll.office, poll.registry || poll.institute, poll.date || poll.publication, poll.scope || poll.uf || 'BR', poll.institute].join('|')));
+    const catalogRegistries = new Set(catalogPolls.flatMap((poll) => trustExtractRegistryNumbers(poll.registry)));
+    const scenarioTotal = presidential.length + officeViews.reduce((total, viewId) => total + officeParityObservations(viewId).length, 0);
+    const officialRows = state.registry.filter((row) => row.registry || row.registration);
+    const linkedRows = officialRows.filter((row) => trustExtractRegistryNumbers(row.registry || row.registration).some((registry) => catalogRegistries.has(registry)));
+    const unmatched = officialRows.filter((row) => !trustExtractRegistryNumbers(row.registry || row.registration).some((registry) => catalogRegistries.has(registry)));
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+    const awaitingDate = unmatched.filter((row) => {
+      const timestamp = trustPublicationTimestamp(row.publication || row.disclosure);
+      return timestamp && timestamp > endOfToday.getTime();
+    });
+    const reviewQueue = unmatched.filter((row) => !awaitingDate.includes(row));
+    const officeOrder = ['Presidente', 'Governador', 'Senador', 'Deputado Federal', 'Deputado Estadual', 'Deputado Distrital'];
+    const officeRows = officeOrder.map((office) => {
+      const total = officialRows.filter((row) => row.office === office).length;
+      const linked = linkedRows.filter((row) => row.office === office).length;
+      const review = reviewQueue.filter((row) => row.office === office).length;
+      const future = awaitingDate.filter((row) => row.office === office).length;
+      return { office, total, linked, review, future };
+    }).filter((item) => item.total || item.linked);
+    const syncLabel = state.registryMeta?.generatedAt
+      ? new Date(state.registryMeta.generatedAt).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
+      : 'sincronização em andamento';
+
+    return `<article class="news-card" data-trust-coverage>
+      <div class="news-card-heading border-t-4 border-t-blue-500"><div><span>Confiança e cobertura nacional</span><strong>Auditoria explícita de Presidência e estados</strong></div><small>${escapeHtml(syncLabel)}</small></div>
+      <div class="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-5">
+        ${kpiMarkup('Cenários estruturados', formatNumber(scenarioTotal), 'cada cenário e confronto permanece separado', 'emerald')}
+        ${kpiMarkup('Levantamentos únicos', formatNumber(uniquePolls.size), 'sem contar cenários da mesma pesquisa como pesquisas diferentes', 'blue')}
+        ${kpiMarkup('Registros oficiais TSE', state.registryLoading ? '…' : formatNumber(officialRows.length), 'Presidência e cargos estaduais/federais', 'amber')}
+        ${kpiMarkup('Vínculos confirmados', state.registryLoading ? '…' : formatNumber(linkedRows.length), 'registro oficial associado a resultado no catálogo', 'emerald')}
+        ${kpiMarkup('Fila de conferência', state.registryLoading ? '…' : formatNumber(reviewQueue.length), 'data prevista atingida ou não informada', 'red')}
+      </div>
+      <div class="border-t border-slate-200 bg-slate-50 p-4 text-sm leading-relaxed text-slate-700"><strong class="text-slate-950">O painel não declara cobertura total.</strong> Um registro sem resultado vinculado não prova que a pesquisa já foi divulgada: ele entra em uma fila de conferência. Somente percentuais encontrados em publicação verificável entram nos gráficos.</div>
+      ${officeRows.length ? `<div class="overflow-x-auto border-t border-slate-200"><table class="data-table"><thead><tr><th>Cargo</th><th>Registros TSE</th><th>Vinculados</th><th>Revisar fonte</th><th>Prazo futuro</th></tr></thead><tbody>${officeRows.map((item) => `<tr><td><strong>${escapeHtml(item.office)}</strong></td><td>${formatNumber(item.total)}</td><td><span class="text-emerald-700">${formatNumber(item.linked)}</span></td><td><span class="text-red-700">${formatNumber(item.review)}</span></td><td>${formatNumber(item.future)}</td></tr>`).join('')}</tbody></table></div>` : ''}
+      ${unmatched.length ? `<details class="border-t border-slate-200 bg-white"><summary class="cursor-pointer p-4 text-sm font-black uppercase text-slate-800">Abrir fila de conferência — até 40 registros</summary><div class="grid gap-2 border-t border-slate-200 p-4 md:grid-cols-2">${unmatched.slice().sort((a, b) => trustPublicationTimestamp(b.publication || b.disclosure) - trustPublicationTimestamp(a.publication || a.disclosure)).slice(0,40).map((row) => {
+        const future = awaitingDate.includes(row);
+        return `<div class="border border-slate-200 bg-slate-50 p-3"><div class="flex flex-wrap items-center justify-between gap-2"><strong class="block text-sm text-slate-950">${escapeHtml(row.registry || row.registration || 'Registro')}</strong><span class="table-badge">${future ? 'Prazo futuro' : 'Revisar publicação'}</span></div><small class="mt-1 block text-xs text-slate-500">${escapeHtml(row.office || 'Cargo não identificado')} · ${escapeHtml(row.institute || row.company || 'Instituto não informado')} · ${escapeHtml(row.uf || 'BR')} · ${escapeHtml(row.publication || row.disclosure || 'data não informada')}</small></div>`;
+      }).join('')}</div></details>` : ''}
+    </article>`;
+  };
