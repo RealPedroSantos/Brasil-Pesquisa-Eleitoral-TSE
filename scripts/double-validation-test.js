@@ -13,8 +13,9 @@ const dashboard = read('public/dashboard.js');
 const api = read('api/tse-registry-v2.js');
 const finalRenderer = read('dashboard-parts/part-05z-final-integrity.txt');
 const finalRegistry = read('dashboard-parts/part-05zz-double-validation.txt');
+const chartLayoutFix = read('dashboard-parts/part-05zzz-chart-layout-fix.txt');
 
-// Validação 1: integridade estrutural dos gráficos.
+// Validação 1: integridade estrutural e visual dos gráficos.
 assert(dashboard.includes("timelineValidation = 'verified-v2'"), 'renderizador final não foi incorporado ao bundle.');
 assert(dashboard.includes("timelineScale = 'proportional-date'"), 'eixo temporal proporcional não está ativo.');
 assert(dashboard.includes("portraitRailInside = 'disabled'"), 'trilho de retratos ainda pode ser ativado.');
@@ -23,6 +24,17 @@ assert(finalRenderer.includes("uniqueDates.size === sorted.length"), 'pesquisas 
 assert(finalRenderer.includes("scenario") && finalRenderer.includes("candidates"), 'a comparabilidade não considera cenário e composição.');
 assert(!/svgEl\([^\n]*chart-photo-connector/.test(finalRenderer), 'o renderizador final ainda cria conectores externos.');
 assert(!finalRenderer.includes("chart-candidate-photo-border"), 'o renderizador final ainda posiciona retratos sobre o gráfico.');
+
+// Validação 1B: regressões de compressão e sobreposição visual.
+assert(dashboard.includes("sameDateLayout = 'clustered'"), 'o agrupamento visual dos cenários da mesma data não entrou no bundle.');
+assert(dashboard.includes("intrinsicWidth = 'preserved'"), 'a largura intrínseca do gráfico não está preservada.');
+assert(chartLayoutFix.includes('verifiedChartClusterLayout(items)'), 'não existe cálculo de agrupamento para observações da mesma data.');
+assert(chartLayoutFix.includes('offsetByItem.set(item'), 'observações da mesma data continuam sem deslocamento individual.');
+assert(chartLayoutFix.includes('repeatedObservations * clusterLayout.clusterStep'), 'a largura não considera cenários repetidos na mesma data.');
+assert(chartLayoutFix.includes("svg.style.width = `max(100%, ${width}px)`"), 'o SVG ainda pode ser comprimido para a largura do cartão.');
+assert(chartLayoutFix.includes("svg.style.minWidth = `${width}px`"), 'o contêiner rolável não preserva a largura calculada.');
+assert(chartLayoutFix.includes("`${group.length} cenários`"), 'datas com múltiplos cenários não são identificadas visualmente.');
+assert(chartLayoutFix.includes("event.preventDefault()"), 'a interação por teclado pode acionar rolagem ao abrir detalhes.');
 
 // Validação 2: completude da importação oficial de 2026.
 assert(api.includes("'NR_PROTOCOLO_REGISTRO'"), 'cabeçalho oficial de protocolo não é reconhecido.');
@@ -33,4 +45,4 @@ assert(finalRegistry.includes('meta.truncated === false'), 'o cliente não bloqu
 assert(finalRegistry.includes('new Set(identities).size === records.length'), 'o cliente não valida identidades duplicadas.');
 assert(finalRegistry.includes("dataset.registryValidation = 'passed-twice'"), 'o resultado das duas validações não fica exposto na produção.');
 
-console.log('Validação dupla concluída: gráficos e base oficial de 2026 passaram nas verificações estruturais.');
+console.log('Validação dupla concluída: gráficos, layout e base oficial de 2026 passaram nas verificações estruturais.');
